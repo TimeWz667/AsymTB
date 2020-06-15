@@ -32,7 +32,7 @@ NotiSp0 <- user(0)
 r_sym <- user(4) # Symptom activation
 p_sp <- user(0.3) # sp at symptom onset
 r_tr <- user(0.3) # Conversion
-r_sc <- user(0.15)# Self-cure
+r_sc <- user(0.15) # Self-cure
 r_death_sp <- user(0.127)
 r_death_sn <- user(0.024)
 del_sp <- user(0.5) # Delay sp
