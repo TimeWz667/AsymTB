@@ -1,31 +1,21 @@
-## Compile models -----
-# m_at_ts <- stan_model("stan/m_anp_ts.stan")
-# saveRDS(m_at_ts, file = "stan/m_at_ts.rds")
-# m_t_ts <- stan_model("stan/m_np_ts.stan")
-# saveRDS(m_t_ts, file = "stan/m_t_ts.rds")
 
-
-## Model fitting
-fit_anp <- function(dat_anp, dur_asym = 3, n_iter = 5E4, n_collect = 1E3, n_chain = 3) {
+fit_anp <- function(dat_anp, n_iter = 5E4, n_collect = 1E3, n_chain = 3, 
+                    prior = list(r_death_sp = 0.127, r_death_sn = 0.024, r_sc_l = 0.1, r_sc_u = 0.3)) {
   require(rstan)
   
-  m_at_ts <- readRDS(file = "stan/m_at_ts.rds")
+  m_anp <- readRDS(file = "stan/m_anp.rds")
+  pars <- c("r_sym", "del_sn", "del_sp", "r_tr", "adr", "p_sp", "r_sc")
   
-  
-  pars <- c("del_sp", "del_sn", "r_tr", "adr", "p_sp", "pr_sn", "pr_sp", "pr_a",
-            "inc_a", "inc_s", "inc_sn", "inc_sp", "noti_sn", "noti_sp", "prv")
-  
-  
-  inp <- list(r_death_sp = 0.127, r_death_sn = 0.024, r_sym = 12/dur_asym, r_sc = 0.15)
+  exo <- prior
   
   ## Duration calc
   f <- "odin/ode_anp_cohort.R"
-  model <- odin::odin(f, target = "r")
+  model <- odin::odin(f)
   cm <- model()
-  calc_dur <- function(cm, inp) {
+  calc <- function(cm, inp) {
     cm$set_user(user = inp)
     res <- cm$run(seq(0, 100, 0.1))
-
+    
     a <- sum((res[-1, 2] + res[-nrow(res), 2]) * diff(res[, "t"]) / 2)
     sn <- sum((res[-1, 3] + res[-nrow(res), 3]) * diff(res[, "t"]) / 2)
     sp <- sum((res[-1, 4] + res[-nrow(res), 4]) * diff(res[, "t"]) / 2)
@@ -34,115 +24,303 @@ fit_anp <- function(dat_anp, dur_asym = 3, n_iter = 5E4, n_collect = 1E3, n_chai
       Sn = sn,
       Sp = sp,
       Sym = sn + sp,
-      All = a + sn + sp
+      All = a + sn + sp, 
+      res[nrow(res), c("Cured", "Death", "NotiSn", "NotiSp")]
     )
   }
   
+  dat <- c(dat_anp, exo)
   
-  res <- lapply(c("female", "male"), function(sex) {
-    dat <- c(dat_anp[[sex]], inp)
-    fitted <- sampling(m_at_ts, iter = n_iter, warmup = n_iter - n_collect, chain = n_chain, data = dat)
-    mc <- extract(fitted, pars = c("del_sn", "del_sp", "r_tr", "adr", "p_sp"))
-
-    duration <- apply(as.data.frame(mc)[c("del_sn", "del_sp", "r_tr", "p_sp")], 1, function(x) {
-      calc_dur(cm, c(list(r_sym = 12 / dur_asym, A0 = 1, Sn0 = 0, Sp0 = 0), x))
-    })
-    duration <- t(duration)
-    
-    list(
-      DurAsym = dur_asym,
-      MC = mc,
-      Parameters = summary(fitted, pars = c("del_sn", "del_sp", "r_tr", "adr", "p_sp"))$summary,
-      Proportion = summary(fitted, pars = c("pr_a", "pr_sn", "pr_sp"))$summary,
-      Prevalence = summary(fitted, pars = "prv")$summary,
-      Incidence = list(
-        Asym = summary(fitted, pars = "inc_a")$summary,
-        Sym = summary(fitted, pars = "inc_s")$summary,
-        Sn = summary(fitted, pars = "inc_sn")$summary,
-        Sp = summary(fitted, pars = "inc_sp")$summary
-      ),
-      Duration = duration,
-      Data = c(
-        PrvSn = (dat$Sn / dat$N),
-        PrvSp = (dat$Sp / dat$N),
-        NotiSn = (dat$Noti_Sn / dat$Pop)[1],
-        NotiSp = (dat$Noti_Sp / dat$Pop)[1],
-        DelaySn = (dat$Sn / dat$N) / (dat$Noti_Sn / dat$Pop)[1],
-        DelaySp = (dat$Sp / dat$N) / (dat$Noti_Sp / dat$Pop)[1]
-      ),
-      Exo = inp
-    )
+  fitted <- sampling(m_anp, iter = n_iter, warmup = n_iter - n_collect, chain = n_chain, data = dat)
+  mc <- extract(fitted, pars = pars)
+  
+  sim <- apply(as.data.frame(mc)[c("r_sym", "del_sn", "del_sp", "r_tr", "p_sp", "r_sc")], 1, function(x) {
+    calc(cm, c(list(A0 = 1, Sn0 = 0, Sp0 = 0), x))
   })
-  names(res) <- c("female", "male")
+  sim <- t(sim)
+  
+  duration <- sim[, c("A", "Sn", "Sp", "Sym", "All")]
+  end <- sim[, c("Cured", "Death", "NotiSn", "NotiSp")]
+  
+  res <- list(
+    MC = mc,
+    Parameters = summary(fitted, pars = c("r_sym", "r_tr", "adr", "p_sp", "r_sc", "del_sn", "del_sp"))$summary,
+    Proportion = summary(fitted, pars = c("pr_a", "pr_sn", "pr_sp"))$summary,
+    Prevalence = summary(fitted, pars = "prv")$summary,
+    Incidence = list(
+      Asym = summary(fitted, pars = "inc_a")$summary,
+      Sym = summary(fitted, pars = "inc_s")$summary,
+      Sn = summary(fitted, pars = "inc_sn")$summary,
+      Sp = summary(fitted, pars = "inc_sp")$summary
+    ),
+    Notification = list(
+      Sn = summary(fitted, pars = "noti_sn")$summary,
+      Sp = summary(fitted, pars = "noti_sp")$summary
+    ),
+    NIR = summary(fitted, pars = "ni")$summary,
+    Duration = duration,
+    EndPoints = end,
+    Data = with(dat, {
+      psn <- Sn / N
+      psp <- Sp / N
+      nsn <- Noti_Sn / Pop
+      nsp <- Noti_Sp / Pop
+      
+      if (year_survey %in% Years) {
+        nsn <- nsn[Years == year_survey]
+        nsp <- nsp[Years == year_survey]
+      } else {
+        nsn <- tail(nsn, 1)
+        nsp <- tail(nsp, 1)
+      }
+      
+      c(
+        PrvSn = psn, PrvSp = psp,
+        NotiSn = nsn, NotiSp = nsp,
+        DelaySn = psn / nsn, DelaySp = psn / nsn,
+        Year = year_survey
+      )
+    }),
+    Exo = prior
+  )
+
   res
 }
 
 
-fit_np <- function(dat_np, n_iter = 5E4, n_collect = 1E3, n_chain = 3) {
+fit_as <- function(dat_as, n_iter = 5E4, n_collect = 1E3, n_chain = 3, 
+                    prior = list(r_death = 0.071, r_sc_l = 0.1, r_sc_u = 0.3)) {
   require(rstan)
   
-  m_t_ts <- readRDS(file = "stan/m_t_ts.rds")
+  m_as <- readRDS(file = "stan/m_as.rds")
+  pars <- c("r_sym", "del", "adr", "r_sc")
   
-  pars <- c("del_sp", "del_sn", "r_tr", "adr", "p_sp", "pr_sn", "pr_sp",
-            "inc_s", "inc_sn", "inc_sp", "noti_sn", "noti_sp", "prv")
+  exo <- prior
   
+  ## Duration calc
+  f <- "odin/ode_as_cohort.R"
+  model <- odin::odin(f)
+  cm <- model()
+  calc <- function(cm, inp) {
+    cm$set_user(user = inp)
+    res <- cm$run(seq(0, 100, 0.1))
+    
+    a <- sum((res[-1, 2] + res[-nrow(res), 2]) * diff(res[, "t"]) / 2)
+    sym <- sum((res[-1, 3] + res[-nrow(res), 3]) * diff(res[, "t"]) / 2)
+
+    c(
+      A = a,
+      Sym = sym,
+      All = a + sym, 
+      res[nrow(res), c("Cured", "Death", "Noti")]
+    )
+  }
   
-  inp <- list(r_death_sp = 0.127, r_death_sn = 0.024, r_sc = 0.15)
+  dat <- c(dat_as, exo)
+  
+  fitted <- sampling(m_as, iter = n_iter, warmup = n_iter - n_collect, chain = n_chain, data = dat)
+  mc <- extract(fitted, pars = c("r_sym", "del", "r_sc", "adr"))
+  
+  sim <- apply(as.data.frame(mc)[c("r_sym", "del", "r_sc")], 1, function(x) {
+    calc(cm, c(list(A0 = 1, S0 = 0), x))
+  })
+  sim <- t(sim)
+  
+  duration <- sim[, c("A", "Sym", "All")]
+  end <- sim[, c("Cured", "Death", "Noti")]
+  
+  res <- list(
+    MC = mc,
+    Parameters = summary(fitted, pars = c("r_sym", "del", "r_sc", "adr"))$summary,
+    Proportion = summary(fitted, pars = c("pr_a", "pr_s"))$summary,
+    Prevalence = summary(fitted, pars = "prv")$summary,
+    Incidence = list(
+      Asym = summary(fitted, pars = "inc_a")$summary,
+      Sym = summary(fitted, pars = "inc_s")$summary
+    ),
+    Notification = list(
+      Sym = summary(fitted, pars = "noti")$summary
+    ),
+    #NIR = summary(fitted, pars = "ni")$summary,
+    Duration = duration,
+    EndPoints = end,
+    Data = with(dat, {
+      prv <- Sym / N
+      noti <- Noti / Pop
+      if (year_survey %in% Years) {
+        noti <- noti[Years == year_survey]
+      } else {
+        noti <- tail(noti, 1)
+      }
+      c(PrvSym = prv, Noti = noti, Delay = prv / noti, Year = year_survey)
+    }),
+    Exo = prior
+  )
+  
+  res
+}
+
+
+fit_np <- function(dat_np, n_iter = 5E4, n_collect = 1E3, n_chain = 3, 
+                   prior = list(r_death_sn = 0.022, r_death_sp = 0.12, r_sc_l = 0.1, r_sc_u = 0.3)) {
+  require(rstan)
+  
+  m_np <- readRDS(file = "stan/m_np.rds")
+  pars <- c("del_sn", "del_sp", "r_tr", "adr", "p_sp", "r_sc")
+  
+  exo <- prior
   
   ## Duration calc
   f <- "odin/ode_np_cohort.R"
-  model <- odin::odin(f, target = "r")
+  model <- odin::odin(f)
   cm <- model()
-  calc_dur <- function(cm, inp) {
+  calc <- function(cm, inp) {
     cm$set_user(user = inp)
     res <- cm$run(seq(0, 100, 0.1))
     
     sn <- sum((res[-1, 2] + res[-nrow(res), 2]) * diff(res[, "t"]) / 2)
     sp <- sum((res[-1, 3] + res[-nrow(res), 3]) * diff(res[, "t"]) / 2)
     c(
-      A = 0,
       Sn = sn,
       Sp = sp,
       Sym = sn + sp,
-      All = sn + sp
+      All = sn + sp, 
+      res[nrow(res), c("Cured", "Death", "NotiSn", "NotiSp")]
     )
   }
   
+  dat <- c(dat_np, exo)
   
-  res <- lapply(c("female", "male"), function(sex) {
-    dat <- c(dat_np[[sex]], inp)
-    fitted <- sampling(m_t_ts, iter = n_iter, warmup = n_iter - n_collect, chain = n_chain, data = dat)
-    
-    mc <- extract(fitted, pars = c("del_sn", "del_sp", "r_tr", "adr", "p_sp"))
-    
-    duration <- apply(as.data.frame(mc)[c("del_sn", "del_sp", "r_tr", "p_sp")], 1, function(x) {
-      calc_dur(cm, c(list(n0  = 1), x))
-    })
-    duration <- t(duration)
-    
-    list(
-      DurAsym = 0,
-      MC = mc,
-      Parameters = summary(fitted, pars = c("del_sn", "del_sp", "r_tr", "adr", "p_sp"))$summary,
-      Proportion = summary(fitted, pars = c("pr_sn", "pr_sp"))$summary,
-      Prevalence = summary(fitted, pars = "prv")$summary,
-      Incidence = list(
-        Sym = summary(fitted, pars = "inc_s")$summary,
-        Sn = summary(fitted, pars = "inc_sn")$summary,
-        Sp = summary(fitted, pars = "inc_sp")$summary
-      ),
-      Duration = duration,
-      Data = c(
-        PrvSn = (dat$Sn / dat$N),
-        PrvSp = (dat$Sp / dat$N),
-        NotiSn = (dat$Noti_Sn / dat$Pop)[1],
-        NotiSp = (dat$Noti_Sp / dat$Pop)[1],
-        DelaySn = (dat$Sn / dat$N) / (dat$Noti_Sn / dat$Pop)[1],
-        DelaySp = (dat$Sp / dat$N) / (dat$Noti_Sp / dat$Pop)[1]
-      ),
-      Exo = inp
-    )
+  fitted <- sampling(m_np, iter = n_iter, warmup = n_iter - n_collect, chain = n_chain, data = dat)
+  mc <- extract(fitted, pars = pars)
+  
+  sim <- apply(as.data.frame(mc)[c("del_sn", "del_sp", "r_tr", "p_sp", "r_sc")], 1, function(x) {
+    calc(cm, c(list(n0 = 1), x))
   })
-  names(res) <- c("female", "male")
+  sim <- t(sim)
+  
+  duration <- sim[, c("Sn", "Sp", "Sym", "All")]
+  end <- sim[, c("Cured", "Death", "NotiSn", "NotiSp")]
+  
+  res <- list(
+    MC = mc,
+    Parameters = summary(fitted, pars = c("r_tr", "adr", "p_sp", "r_sc", "del_sn", "del_sp"))$summary,
+    Proportion = summary(fitted, pars = c("pr_sn", "pr_sp"))$summary,
+    Prevalence = summary(fitted, pars = "prv")$summary,
+    Incidence = list(
+      Sym = summary(fitted, pars = "inc_s")$summary,
+      Sn = summary(fitted, pars = "inc_sn")$summary,
+      Sp = summary(fitted, pars = "inc_sp")$summary
+    ),
+    Notification = list(
+      Sn = summary(fitted, pars = "noti_sn")$summary,
+      Sp = summary(fitted, pars = "noti_sp")$summary
+    ),
+    #NIR = summary(fitted, pars = "ni")$summary,
+    Duration = duration,
+    EndPoints = end,
+    Data = with(dat, {
+      psn <- Sn / N
+      psp <- Sp / N
+      nsn <- Noti_Sn / Pop
+      nsp <- Noti_Sp / Pop
+      
+      if (year_survey %in% Years) {
+        nsn <- nsn[Years == year_survey]
+        nsp <- nsp[Years == year_survey]
+      } else {
+        nsn <- tail(nsn, 1)
+        nsp <- tail(nsp, 1)
+      }
+      
+      c(
+        PrvSn = psn, PrvSp = psp,
+        NotiSn = nsn, NotiSp = nsp,
+        DelaySn = psn / nsn, DelaySp = psn / nsn,
+        Year = year_survey
+      )
+    }),
+    Exo = prior
+  )
+  
   res
 }
+
+
+fit_asc <- function(dat_asc, n_iter = 5E4, n_collect = 1E3, n_chain = 3, 
+                   prior = list(r_death = 0.071, r_sc_l = 0.1, r_sc_u = 0.3)) {
+  require(rstan)
+  
+  m_asc <- readRDS(file = "stan/m_asc.rds")
+  pars <- c("r_sym", "r_aware", "del", "adr", "r_sc")
+  
+  exo <- prior
+  
+  ## Duration calc
+  f <- "odin/ode_asc_cohort.R"
+  model <- odin::odin(f)
+  cm <- model()
+  calc <- function(cm, inp) {
+    cm$set_user(user = inp)
+    res <- cm$run(seq(0, 100, 0.1))
+    
+    a <- sum((res[-1, 2] + res[-nrow(res), 2]) * diff(res[, "t"]) / 2)
+    sym <- sum((res[-1, 3] + res[-nrow(res), 3]) * diff(res[, "t"]) / 2)
+    cs <- sum((res[-1, 4] + res[-nrow(res), 4]) * diff(res[, "t"]) / 2)
+    
+    c(
+      A = a,
+      Sym = sym,
+      CS = cs,
+      All = a + sym + cs, 
+      res[nrow(res), c("Cured", "Death", "Noti")]
+    )
+  }
+  
+  dat <- c(dat_asc, exo)
+  
+  fitted <- sampling(m_asc, iter = n_iter, warmup = n_iter - n_collect, chain = n_chain, data = dat)
+  mc <- extract(fitted, pars = c("r_sym", "r_aware", "del", "r_sc", "adr"))
+  
+  sim <- apply(as.data.frame(mc)[c("r_sym", "r_aware", "del", "r_sc")], 1, function(x) {
+    calc(cm, c(list(A0 = 1, S0 = 0, C0 = 0), x))
+  })
+  sim <- t(sim)
+  
+  duration <- sim[, c("A", "Sym", "CS", "All")]
+  end <- sim[, c("Cured", "Death", "Noti")]
+  
+  res <- list(
+    MC = mc,
+    Parameters = summary(fitted, pars = c("r_sym", "r_aware", "del", "r_sc", "adr"))$summary,
+    Proportion = summary(fitted, pars = c("pr_a", "pr_s", "pr_c"))$summary,
+    Prevalence = summary(fitted, pars = "prv")$summary,
+    Incidence = list(
+      Asym = summary(fitted, pars = "inc_a")$summary,
+      Sym = summary(fitted, pars = "inc_s")$summary,
+      CS = summary(fitted, pars = "inc_c")$summary
+    ),
+    Notification = list(
+      CS = summary(fitted, pars = "noti")$summary
+    ),
+    #NIR = summary(fitted, pars = "ni")$summary,
+    Duration = duration,
+    EndPoints = end,
+    Data = with(dat, {
+      prv <- Sym / N
+      noti <- Noti / Pop
+      if (year_survey %in% Years) {
+        noti <- noti[Years == year_survey]
+      } else {
+        noti <- tail(noti, 1)
+      }
+      c(PrvSym = prv, Noti = noti, Delay = prv / noti, Year = year_survey)
+    }),
+    Exo = prior
+  )
+  
+  res
+}
+
+
+
