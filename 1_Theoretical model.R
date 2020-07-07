@@ -22,7 +22,7 @@ res <- data.table::rbindlist(lapply(seq(0, 1, 0.01), function(dur_asym) {
     return(data.frame(
       DurAsym = dur_asym, PrSp = p_sp, 
       Conversion = c("No conversion", paste0("Conversion: ", pars["r_tr"])),
-      SpSn = c(m1[3]/sum(m1[1:2]), m2[3]/sum(m2[1:2])), 
+      SpSn = c(sum(m1[2:3])/sum(m1[1]), sum(m2[2:3])/sum(m2[1])), 
       ErrDelaySn = c(m1[4]/sum(m1[2]), m2[4]/sum(m2[2])) - pars["delay_sn"], 
       ErrDelaySp = c(m1[5]/m1[3], m2[5]/m2[3]) - pars["delay_sp"],
       ErrDelay = c(sum(m1[4:5])/sum(m1[1:3]), sum(m2[4:5])/sum(m2[1:3])) - pars["delay_sp"],
@@ -43,12 +43,12 @@ library(ggplot2)
 g <- ggplot(res, aes(x = DurAsym, y = PrSp, z = SpSn)) + 
   geom_tile(aes(fill = SpSn)) + 
   stat_contour(breaks = 1, colour = "black") +
-  scale_fill_distiller("Sp/Sn", palette = "Spectral", direction = -1) +
+  scale_fill_distiller("Sym/Asym", palette = "Spectral", direction = -1) +
   scale_y_continuous("Proportion of Smear+ve at symptom onset (%)") +
   scale_x_continuous("Duration of asymptomatic phase, year") +
   facet_grid(.~Conversion)
 
-ggsave("output/Sp2Sn.jpg", plot = g, width = 7, height = 4)
+ggsave("output/Sym2Asym.jpg", plot = g, width = 7, height = 4)
 
 
 ggplot(res, aes(x = DurAsym, y = PrSp, z = ErrDelaySn)) + 
