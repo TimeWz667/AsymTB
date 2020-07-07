@@ -13,7 +13,8 @@ data {
   
   real<lower=0> r_death_sn;
   real<lower=0> r_death_sp;
-  real<lower=0> r_sc;
+  real<lower=0> r_sc_l;
+  real<lower=0> r_sc_u;
 }
 parameters {
   real<lower=0, upper=1> p_sp;
@@ -21,7 +22,8 @@ parameters {
   real<lower=0> del_sp;
   real<lower=0> r_tr;
   real<lower=0, upper=1> prv0;
-  real<lower=0, upper=r_death_sn + r_sc> adr;
+  real<lower=-0.15, upper=0.15> adr;
+  real<lower=r_sc_l, upper = r_sc_u> r_sc;
 }
 transformed parameters {
   real<lower=0> rn;
@@ -66,7 +68,8 @@ model {
   del_sp ~ gamma(1E-1, 1E-1);
   del_sn ~ gamma(1E-1, 1E-1);
   
-  adr ~ uniform(0, r_death_sn + r_sc);
+  r_sc ~ uniform(r_sc_l, r_sc_u);
+  adr ~ uniform(-0.15, 0.15);
 
   target += binomial_lpmf(Sn | N, prv_sn);
   target += binomial_lpmf(Sp | N, prv_sp);
