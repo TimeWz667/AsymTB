@@ -1,0 +1,95 @@
+---
+output: 
+  html_document:
+    theme: flatly
+
+---
+
+# Model 1 {.tabset .tabset-fade .tabset-pills}
+
+## Model definition:
+
+### States  
+
+|                         | $A$                   | $S$                 |
+|-------------------------|-----------------------|---------------------|
+| TB-related symptoms     | No                    | Yes                 |
+| Care-seeking intentions | No                    | Yes                 |
+| TB-related mortality    | No                    | Yes                 |
+| Sputum smear microscopy | Usually low precision | Positive / Negative |
+
+- $A$: Asymptomatic TB
+- $S$: Symptomatic TB, before case-detection
+
+
+### Dynamics
+
+```{r, echo=FALSE, fig.cap="", out.width = '80%', fig.align='center'}
+knitr::include_graphics("model1.jpg")
+```
+
+Subject to a **Steady-declining solution** where the annual decline rates: prevalence = incidence = notification = $\phi$
+
+
+## Empirical model
+
+### Prevalnce
+
+We related the prevalence, $Prev_A$ and $Prev_S$, to prevalence survey data with the $Binomial$ distribution, where
+
+$$\begin{array}{rl}
+Prev_A &= \frac{\gamma_S + \rho - \phi}{\gamma_S + \rho - \phi + \theta} \times Prev  \\
+Prev_S &= \frac{\theta}{\gamma_S + \rho - \phi + \theta} \times Prev
+\end{array}$$
+
+
+- $Prev$: the prevalence of all active TB.
+
+
+### Notification
+
+We related the time-series of case notification rates, $CNR_{S, t}$, to case-notification and demographic data with the $Poisson$ distribution, where 
+
+$$CNR_{S, t} = \rho Prev_S \times e^{-\phi (t - t0)}$$
+
+- $t$: year
+- $t0$:  the year with the prevalence survey
+
+
+### Prior distribution
+
+
+$$\begin{array}{rl}
+\theta & \sim invGamma(1, 1)\\
+\rho & \sim invGamma(1, 1)\\
+\nu & \sim U(0.1, 0.3)\\
+\phi & \sim U(-0.2, 0.2)\\
+Prev & \sim U(0, 1)
+\end{array}$$
+
+
+
+The model fitting were implemented ``R``  with ``rstan``. 
+
+
+
+<br>
+
+#
+#### Notations
+
+
+- $\theta$: Symptom onset rate                                
+- $\rho$: Care-seeking rate
+
+- $\nu$: Self-cure rate 
+- $\mu$: Background death rate                        
+- $\mu_{S}$: Untreated death rate of state $S$            
+
+- $\phi$: Annual decline rate for incidence/prevalence/notification
+
+- $\gamma_A = \nu + \mu$: Dropout rate of $A$ (self-cure + death)
+- $\gamma_S = \nu + \mu + \mu_S$: Dropout rate of $S$ (self-cure + death)
+
+
+

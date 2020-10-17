@@ -1,0 +1,107 @@
+---
+output: 
+  html_document:
+    theme: flatly
+
+---
+
+# Model 3 {.tabset .tabset-fade .tabset-pills}
+
+## Model definition:
+
+### States  
+
+
+|                         | $A$                   | $Sn$                | $Sp$                |
+|-------------------------|-----------------------|---------------------|---------------------|
+| TB-related symptoms     | No                    | Yes                 | Yes                 |
+| Care-seeking intentions | No                    | Yes                 | Yes                 |
+| TB-related mortality    | No                    | Yes                 | Yes                 |
+| Sputum smear microscopy | Usually low precision | Negative            | Positive            |
+
+- $A$: Asymptomatic TB
+- $Sn$: Symptomatic TB, smear-negative
+- $Sp$: Symptomatic TB, smear-positive
+
+
+### Dynamics
+
+```{r, echo=FALSE, fig.cap="", out.width = '80%', fig.align='center'}
+knitr::include_graphics("model3.jpg")
+```
+
+Subject to a **Steady-declining solution** where the annual decline rates: prevalence = incidence = notification = $\phi$
+
+
+## Empirical model
+
+### Prevalnce
+
+We related the prevalence, $Prev_A$, $Prev_{Sn}$ and $Prev_{Sp}$, to prevalence survey data with the $Binomial$ distribution, where
+
+
+$$\begin{array}{rl}
+P0_{Sn} &=  (1 - \pi) \theta / (\tau + \gamma_{Sn} + \rho_{Sn} - \phi) \\
+P0_{Sp} &=  (\pi \theta + \tau P0_{Sn}) / (\gamma_{Sp} + \rho_{Sp} - \phi) \\
+
+Prev_A &=  \frac{1}{1 + P0_{Sn} + P0_{Sp}} \times Prev \\  
+Prev_{Sn} &= \frac{P0_{Sn}}{1 + P0_{Sn} + P0_{Sp}} \times Prev \\
+Prev_{Sp} &= \frac{P0_{Sp}}{1 + P0_{Sn} + P0_{Sp}} \times Prev
+\end{array}$$
+
+- $Prev$: the prevalence of all active TB.
+
+
+
+
+### Notification
+
+We related the time-series of case notification rates, $CNR_{Sn, t}$ and $CNR_{Sp, t}$, to case-notification and demographic data with the $Poisson$ distribution, where 
+ 
+$$CNR_{Sn, t} = \rho_{Sn} Prev_{Sn} \times e^{-\phi (t - t0)}$$
+$$CNR_{Sp, t} = \rho_{Sp} Prev_{Sp} \times e^{-\phi (t - t0)}$$
+
+- $t$: year
+- $t0$:  the year with the prevalence survey
+
+
+### Prior distribution
+
+| Parameter| Distribution|
+|-------------------------|-----------------------|---------------------|
+| $\theta$ | $invGamma(1, 1)$ | 
+| $\pi$ | $U(0, 1)$|
+| $\tau$ | $U(0, 0.5)$ |
+| $\rho_{Sn$ | $invGamma(1, 1)$ |
+| $\rho_{Sp}$ | $invGamma(1, 1)$ |
+| $\nu$ | $U(0.1, 0.3)$ |
+| $\phi$ | $U(-0.2, 0.2)$ |
+| $Prev$| $U(0, 1)$|
+
+The model fitting were implemented ``R``  with ``rstan``. 
+
+
+
+<br>
+
+#
+#### Notations
+
+
+- $\theta$: Symptom onset rate
+- $\pi$: Proportion of smear-positive at symptom onset    
+- $\tau$: Conversion rate, from smear-negative to -positive 
+- $\rho_{Sn}$: Care-seeking rate of state $Sn$
+- $\rho_{Sp}$: Care-seeking rate of state $Sp$
+
+- $\nu$: Self-cure rate 
+- $\mu$: Background death rate                        
+- $\mu_{Sn}$: Untreated death rate of state $Sn$
+- $\mu_{Sp}$: Untreated death rate of state $Sp$
+
+
+- $\phi$: Annual decline rate for incidence/prevalence/notification
+
+- $\gamma_A = \nu + \mu$: Dropout rate of $A$ (self-cure + death)
+- $\gamma_{Sn} = \nu + \mu + \mu_{Sn}$: Dropout rate of $Sn$ (self-cure + death)
+- $\gamma_{Sp} = \nu + \mu + \mu_{Sp}$: Dropout rate of $Sp$ (self-cure + death)
