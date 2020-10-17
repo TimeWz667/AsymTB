@@ -1,0 +1,115 @@
+data {
+  // Data from a prevalence survey
+  int<lower=0> N;
+  int<lower=0> Asym;
+  int<lower=0> Sn;
+  int<lower=0> Sp;
+  real YearSurveyed; // timing of the survey
+
+  // Time-series of notification data
+  int<lower=0> n_t; // number of time points
+  int<lower=0> Pop[n_t]; // population size
+  int<lower=0> NotiSn[n_t]; // sm- counts
+  int<lower=0> NotiSp[n_t]; // sm+ counts
+  real<lower=0> Years[n_t]; // years of the notification data
+
+  // Prior knowledge
+  real<lower=0> r_sc_l;
+  real<lower=0> r_sc_u;
+  real<lower=0> r_death_sn;
+  real<lower=0> r_death_sp;
+  real<lower=0> r_death_bg;
+  real<lower=0> scale_dur;
+}
+parameters {
+  real<lower=0, upper=1> p_sp; // Probability of sm+ at symptom onset
+  real<lower=0> r_det_sn; // rate to notification, sm-
+  real<lower=0> r_det_sp; // rate to notification, sm+
+  real<lower=0> r_tr; // conversion rate, sm- to sm+
+  real<lower=0, upper=1> prv0; // prevalence of all active TB
+  real<lower=-0.15, upper=0.15> adr; // annual decline rate
+  real<lower=0> r_sym; // symptom development rate == inversion of asymptomatic phase
+  real<lower=r_sc_l, upper = r_sc_u> r_sc; // self-cure rate
+}
+transformed parameters {
+  real<lower=0> ra = r_sc + r_death_bg;
+  real<lower=0> rn = r_sc + r_death_bg + r_death_sn;
+  real<lower=0> rp = r_sc + r_death_bg + r_death_sp;
+
+  real<lower=0> sn0;
+  real<lower=0> sp0;
+  real<lower=0, upper=1> pr_a;
+  real<lower=0, upper=1> pr_sn;
+  real<lower=0, upper=1> pr_sp;
+  real<lower=0, upper=1> prv_a;
+  real<lower=0, upper=1> prv_sn;
+  real<lower=0, upper=1> prv_sp;
+
+  vector<lower=0>[n_t] prv;
+  vector<lower=0>[n_t] nr_sn;
+  vector<lower=0>[n_t] nr_sp;
+  vector<lower=0>[n_t] nr;
+
+
+  sn0 = (1 - p_sp) * r_sym / (r_tr + rn + r_det_sn - adr);
+  sp0 = (p_sp * r_sym + r_tr * sn0) / (rp + r_det_sp - adr);
+
+  // probabilities of the states among all active TB
+  pr_a = 1 / (1 + sn0 + sp0);
+  pr_sn = sn0 * pr_a;
+  pr_sp = sp0 * pr_a;
+
+  // prevalence of the states
+  prv_a = prv0 * pr_a;
+  prv_sn = prv0 * pr_sn;
+  prv_sp = prv0 * pr_sp;
+
+
+  // forecasts/backcasts of prevalence
+  for (i in 1:n_t) {
+    prv[i] = prv0 * exp(- adr * (Years[i] - YearSurveyed));
+  }
+
+  // notification rates
+  nr_sn = prv * pr_sn * r_det_sn;
+  nr_sp = prv * pr_sp * r_det_sp;
+  nr = nr_sn + nr_sp;
+}
+model {
+  p_sp ~ uniform(0, 1);
+  r_tr ~ uniform(0, 0.5);
+  r_sc ~ uniform(r_sc_l, r_sc_u);
+
+  r_det_sp ~ inv_gamma(scale_dur, scale_dur);
+  r_det_sn ~ inv_gamma(scale_dur, scale_dur);
+  r_sym ~ inv_gamma(scale_dur, scale_dur);
+  adr ~ uniform(-0.15, 0.15);
+
+  prv0 ~ uniform(0, 1);
+
+
+  // prevalence to prevalence survey data
+  target += binomial_lpmf(Asym | N, prv_a);
+  target += binomial_lpmf(Sn | N, prv_sn);
+  target += binomial_lpmf(Sp | N, prv_sp);
+
+  // notification rate to notification data
+  for (i in 1:n_t) {
+    target += poisson_lpmf(NotiSn[i] | nr_sn[i] * Pop[i]);
+    target += poisson_lpmf(NotiSp[i] | nr_sp[i] * Pop[i]);
+  }
+}
+generated quantities {
+  vector<lower=0>[n_t] inc_a;
+  vector<lower=0>[n_t] inc_s;
+  vector<lower=0>[n_t] noti;
+  vector<lower=0>[n_t] cdr;
+  
+
+  // incidence estimates
+  inc_a = (ra * pr_a + (rn + r_det_sn) * pr_sn + (rp + r_det_sp) * pr_sp - adr) * prv;
+  inc_s = r_sym * pr_a * prv;
+  noti = prv * pr_sn * r_det_sn + prv * pr_sp * r_det_sp;
+  cdr = noti ./ inc_a;
+
+}
