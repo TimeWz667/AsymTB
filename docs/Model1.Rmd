@@ -25,7 +25,7 @@ output:
 ### Dynamics
 
 ```{r, echo=FALSE, fig.cap="", out.width = '80%', fig.align='center'}
-knitr::include_graphics("model1.jpg")
+knitr::include_graphics("diags/model1.jpg")
 ```
 
 Subject to a **Steady-declining solution** where the annual decline rates: prevalence = incidence = notification = $\phi$

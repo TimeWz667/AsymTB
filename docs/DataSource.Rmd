@@ -1,0 +1,66 @@
+---
+output: 
+  html_document:
+    theme: flatly
+---
+
+
+# Data source
+
+This study focused on the relationship of care notification and prevalence of TB. 
+Then, we used demographic data to improve the validity of the results and used treatment outcome data to extend the inference on care-seeking cascade of people with active TB. 
+
+The analysis mainly depends on **public available** data.
+
+
+
+### Aggregate data of ten countries:
+
+Ten countries were selected due to had at least one TB prevalence survey after 2010 and the completeness of notification data.
+
+They are **Cambodia**,**Kenya**,**Lao People's Democratic Republic**, **Malawi**, **Pakistan**, 
+**Philippines**, **United Republic of Tanzania**, **Uganda**, **VietNam**, **Zambia**.
+
+
+- Demographic data
+  - 2019 Revision of World Population Prospects, WPP
+  - From 2010 to 2018
+  - Population sizes and mortality data
+- TB prevalence
+  - Published reports or journal articles of national TB prevalence survey
+  - After 2010
+  - Raw counts instead of estimates
+  - Exclude subjects on TB treatments if data permitted
+- TB case notification
+  - Case notification from WHO TB database
+  - From 2013 to 2018
+  - Lee carter model applied on age- and sex-specific rates for extrapolating 2010-2012 cases
+- TB treatment outcome
+  - TB treatment outcome from WHO TB database
+  - From 2013 to 2018
+
+
+### Extra Kenya data with higher resolution
+
+- TB prevalence
+  - Individual data published along with the national TB prevalence survey
+  - 2016
+  - With HIV status
+
+
+### Sub-national data of Blantyre city, Malawi: 
+
+- Demographic data
+  - Two censuses data of Blantyre city: 2008 and 2018
+  - Linear interpolation at log scale applied on population sizes for 2009-2017
+  - (Mortality data are aligned with the WPP mortality of Malawi)
+- TB prevalence
+  - pre-SCALE assessment of TB prevalence
+  - 2019
+- TB case notification
+  - the National Tuberculosis Programme of Malawi
+  - From 2011 to 2018
+
+
+
+
