@@ -33,7 +33,7 @@ Subject to a **Steady-declining solution** where the annual decline rates: preva
 
 ## Empirical model
 
-### Prevalnce
+### Prevalence
 
 We related the prevalence, $Prev_A$ and $Prev_S$, to prevalence survey data with the $Binomial$ distribution, where
 

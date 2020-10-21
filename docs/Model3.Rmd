@@ -35,19 +35,18 @@ Subject to a **Steady-declining solution** where the annual decline rates: preva
 
 ## Empirical model
 
-### Prevalnce
+### Prevalence
 
 We related the prevalence, $Prev_A$, $Prev_{Sn}$ and $Prev_{Sp}$, to prevalence survey data with the $Binomial$ distribution, where
 
-
-$$\begin{array}{rl}
+\begin{array}{rl}
 P0_{Sn} &=  (1 - \pi) \theta / (\tau + \gamma_{Sn} + \rho_{Sn} - \phi) \\
 P0_{Sp} &=  (\pi \theta + \tau P0_{Sn}) / (\gamma_{Sp} + \rho_{Sp} - \phi) \\
 
 Prev_A &=  \frac{1}{1 + P0_{Sn} + P0_{Sp}} \times Prev \\  
 Prev_{Sn} &= \frac{P0_{Sn}}{1 + P0_{Sn} + P0_{Sp}} \times Prev \\
 Prev_{Sp} &= \frac{P0_{Sp}}{1 + P0_{Sn} + P0_{Sp}} \times Prev
-\end{array}$$
+\end{array}
 
 - $Prev$: the prevalence of all active TB.
 
