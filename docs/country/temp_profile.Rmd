@@ -12,6 +12,19 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+# Data and model fitting {.tabset}
+
+## TB case notification data from WHO
+```{r echo=FALSE, fig.height=3, fig.hold="hold", out.width="90%"}
+gs$g_CNR
+```
+
+## TB prevalence survey data
+```{r echo=FALSE, fig.height=5, fig.hold="hold", out.width="90%"}
+gss$g_Prv
+```
+
 # Duration / Time to each state {.tabset}
 
 
