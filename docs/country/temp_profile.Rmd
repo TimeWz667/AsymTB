@@ -14,6 +14,21 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Duration / Time to each state {.tabset}
 
+
+<div class = "row">
+<div class = "col-md-4">
+
+#### Duration measures the time spent in a specific state
+Where
+
+ - **Asymptomatic TB**: from TB-detectable to symptom onset
+ - **Symptomatic TB**: from symptom onset to notification
+
+#### Time to state mearsures the time between detectable TB to a specific state
+
+
+</div>
+<div class = "col-md-8">
 ## Duration of each state
 ```{r echo=FALSE, fig.height=5, fig.hold="hold", out.width="90%"}
 gs$g_Duration
@@ -23,22 +38,47 @@ gs$g_Duration
 ```{r echo=FALSE, fig.height=5, fig.hold="hold", out.width="90%"}
 gs$g_TTE
 ```
+</div>
+</div>
+
+
+
 
 
 # Healthcare cascade {.tabset}
 
-## Duration of each state
+<div class = "row">
+<div class = "col-md-4">
+
+#### Cascade can be defined by the proportion to the next stage
+
+Dropouts can attributed to self-cure, background deaths, and untreated deaths
+
+
+#### Cascade can consider the time spent in each state
+
+Longer duration in a state might related to a higher chance of dropout in care-seeking pathways.
+
+
+
+</div>
+<div class = "col-md-8">
+## Cascade in proportions to next stages
 ```{r echo=FALSE, fig.height=4, fig.hold="hold", out.width="90%"}
 gs$g_Cascade
 ```
 
-## Time to each state
+## Cascade with time
 ```{r echo=FALSE, fig.height=4, fig.hold="hold", out.width="90%"}
 gs$g_Cohort_Total
 ```
 
-## Time to each state by sex
+## Cascade with time by sex
 ```{r echo=FALSE, fig.height=7, fig.hold="hold", out.width="90%"}
 gs$g_Cohort_Sex
 ```
+</div>
+</div>
+
+
 
