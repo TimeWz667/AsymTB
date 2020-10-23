@@ -55,7 +55,7 @@ gs$g_TTE
 Dropouts can attributed to self-cure, background deaths, and untreated deaths
 
 
-#### Cascade can consider the time spent in each state
+#### Cascade can consider the time-spent in each state
 
 Longer duration in a state might related to a higher chance of dropout in care-seeking pathways.
 
@@ -63,17 +63,17 @@ Longer duration in a state might related to a higher chance of dropout in care-s
 
 </div>
 <div class = "col-md-8">
-## Cascade in proportions to next stages
+## Proportions
 ```{r echo=FALSE, fig.height=4, fig.hold="hold", out.width="90%"}
 gs$g_Cascade
 ```
 
-## Cascade with time
+## Time-spent
 ```{r echo=FALSE, fig.height=4, fig.hold="hold", out.width="90%"}
 gs$g_Cohort_Total
 ```
 
-## Cascade with time by sex
+## Time-spent by sex
 ```{r echo=FALSE, fig.height=7, fig.hold="hold", out.width="90%"}
 gs$g_Cohort_Sex
 ```
