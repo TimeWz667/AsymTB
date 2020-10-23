@@ -1,8 +1,8 @@
 library(tidyverse)
 library(rstan)
 
-options(mc.cores = parallel::detectCores())
-Sys.setenv(LOCAL_CPPFLAGS = "-march=corei7 -mtune=corei7")
+options(mc.cores = min(5, parallel::detectCores()))
+
 
 source("R/get_exo.R")
 
@@ -21,13 +21,16 @@ countries <- c(
 )
 
 countries_cs <- c(
-  "Malawi", "Philippines", 
-  "United Republic of Tanzania", "Uganda" , "Zambia"
+  MWI = "Malawi", 
+  PHL = "Philippines", 
+  TZA = "United Republic of Tanzania", 
+  UGA = "Uganda", #
+  ZMB = "Zambia"
 )
 
 
 
-for (i in 1:length(countries)) {
+for (i in c(1, 8, 9)) { #1:length(countries)) {
   iso <- names(countries)[i]
   country <- countries[i]
   
@@ -37,6 +40,17 @@ for (i in 1:length(countries)) {
   
   prv <- prevalence
   noti <- notification %>% arrange(Sex, Year)
+  
+  if (iso == "KHM") {
+    noti <- noti %>% filter(Year >= 2014)
+  }
+  if (iso == "UGA") {
+    noti <- noti %>% filter(Year >= 2014)
+  }
+  if (iso == "VNM") {
+    noti <- noti %>% filter(Year >= 2016)
+  }
+  
   dr <- mortality$DeaR
   
   yrs <- sort(unique(noti$Year))
@@ -64,11 +78,11 @@ for (i in 1:length(countries)) {
   
   model <- readRDS(file = "stan/m3_as_uni.rds")
   fitted_as_uni <- sampling(model, data = dat_as, iter = 3000, chain = 2)
-  summary(fitted_as_uni, pars = c("r_sym", "r_det", "adr", "dur_a", "del_s"))$summary
+  summary(fitted_as_uni, pars = c("r_sym", "r_det", "adr", "dur_a", "dur_s"))$summary
   
   model <- readRDS(file = "stan/m3_as_fixed.rds")
   fitted_as_fixed <- sampling(model, data = dat_as, iter = 3000, chain = 2)
-  summary(fitted_as_fixed, pars = c("r_sym", "r_det", "adr", "dur_a", "del_s"))$summary
+  summary(fitted_as_fixed, pars = c("r_sym", "r_det", "adr", "dur_a", "dur_s"))$summary
   
   if (country %in% countries_cs) {
     ## Asymptomatic -> Symptomatic -> Care-seeking attempt -> Notification
@@ -91,18 +105,18 @@ for (i in 1:length(countries)) {
     
     model <- readRDS(file = "stan/m3_asc_uni.rds")
     fitted_asc_uni <- sampling(model, data = dat_asc, iter = 3000, chain = 2)
-    summary(fitted_asc_uni, pars = c("r_sym", "r_aware", "r_det", "adr", "dur_a", "dur_s", "del_s", "del_c", "del"))$summary
+    summary(fitted_asc_uni, pars = c("r_sym", "r_aware", "r_det", "adr", "dur_a", "dur_s", "dur_c"))$summary
     
     model <- readRDS(file = "stan/m3_asc_fixed.rds")
     fitted_asc_fixed <- sampling(model, data = dat_asc, iter = 3000, chain = 2)
-    summary(fitted_asc_fixed, pars = c("r_sym", "r_aware", "r_det", "adr", "dur_a", "dur_s", "del_s", "del_c", "del"))$summary
+    summary(fitted_asc_fixed, pars = c("r_sym", "r_aware", "r_det", "adr", "dur_a", "dur_s", "dur_c"))$summary
     
     save(fitted_as_uni, fitted_as_fixed, dat_as,
          fitted_asc_uni, fitted_asc_fixed, dat_asc,
-         file = paste0("output/ASC/Post_", iso, ".rdata"))
+         file = paste0("out/ASC/Post_", iso, ".rdata"))
   } else {
     save(fitted_as_uni, fitted_as_fixed, dat_as,
-         file = paste0("output/ASC/Post_", iso, ".rdata"))
+         file = paste0("out/ASC/Post_", iso, ".rdata"))
   }
   
 }

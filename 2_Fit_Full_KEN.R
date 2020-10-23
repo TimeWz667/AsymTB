@@ -1,8 +1,9 @@
 library(tidyverse)
 library(rstan)
 
-options(mc.cores = parallel::detectCores())
-Sys.setenv(LOCAL_CPPFLAGS = "-march=corei7 -mtune=corei7")
+options(mc.cores = min(5, parallel::detectCores()))
+
+
 
 source("R/get_exo.R")
 
