@@ -1,0 +1,44 @@
+---
+title: "`r paste0(country, ' (', iso,')')`"
+output: 
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Duration / Time to each state {.tabset}
+
+## Duration of each state
+```{r echo=FALSE, fig.height=5, fig.hold="hold", out.width="90%"}
+gs$g_Duration
+```
+
+## Time to each state
+```{r echo=FALSE, fig.height=5, fig.hold="hold", out.width="90%"}
+gs$g_TTE
+```
+
+
+# Healthcare cascade {.tabset}
+
+## Duration of each state
+```{r echo=FALSE, fig.height=4, fig.hold="hold", out.width="90%"}
+gs$g_Cascade
+```
+
+## Time to each state
+```{r echo=FALSE, fig.height=4, fig.hold="hold", out.width="90%"}
+gs$g_Cohort_Total
+```
+
+## Time to each state by sex
+```{r echo=FALSE, fig.height=7, fig.hold="hold", out.width="90%"}
+gs$g_Cohort_Sex
+```
+
