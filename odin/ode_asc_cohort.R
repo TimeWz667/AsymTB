@@ -1,5 +1,5 @@
 deriv(A) <- - r_sym * A - ga_a * A
-deriv(S) <- r_sym * A - ga_s * S
+deriv(S) <- r_sym * A - r_aware * S - ga_s * S
 deriv(C) <- r_aware * S - ga_c * C
 deriv(Cured) <- r_sc * (A + S + C)
 deriv(Death) <- r_death * (S + C)
