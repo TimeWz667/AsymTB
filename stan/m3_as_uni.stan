@@ -1,3 +1,4 @@
+
 data {
   // Data from a prevalence survey
   int n_gp;
