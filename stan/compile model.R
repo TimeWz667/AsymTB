@@ -2,12 +2,6 @@
 library(rstan)
 rstan_options(auto_write = TRUE)
 
-m_anp <- stan_model("stan/m_anp.stan")
-m_as <- stan_model("stan/m_as.stan")
-m_np <- stan_model("stan/m_np.stan")
-m_asc <- stan_model("stan/m_asc.stan")
-
-
 
 m0 <- stan_model("stan/m0.stan")
 
