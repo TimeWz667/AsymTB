@@ -18,6 +18,8 @@ countries <- c(
 
 ext <- ".png"
 
+n_sel <- 300
+
 #### 
 
 for (i in 1:length(countries)) {
@@ -54,52 +56,11 @@ for (i in 1:length(countries)) {
       summarise(value = sum(n_all) / sum(Pop), Sex = "Total", Index = "CNR") %>%
       select(Year, Sex, Index, value)
   )
-  
-  
-  dat_inc <- incidence %>% 
-    left_join(rbind(
-      notification %>%
-        filter(Year == 2018) %>%
-        group_by(Year) %>%
-        summarise(Pop = sum(Pop), Sex = "Total"),
-      notification %>%
-        filter(Year == 2018) %>%
-        select(Year, Pop, Sex)
-    )) %>%
-    mutate(value = m / Pop, vu = u / Pop, vl = l / Pop, Index = "Inc") %>%
-    select(Year, Sex, Index, value, vl, vu)
-  
-  
-  fore_inc <- local({
-    inc_a <- as.table(extract(fitted_as_uni, c("inc_a"))$inc_a[1:200, , length(dat_as$Years)])
-    dimnames(inc_a)[[1]] <- 1:200
-    dimnames(inc_a)[[2]] <- c("Female", "Male")
-    inc_a <- data.frame(inc_a)
-    
-    colnames(inc_a) <- c("Sim", "Sex", "value")
-    inc_a$Year <- 2018
-    inc_a$Index <- "asym"
-    
-    
-    inc_s <- as.table(extract(fitted_as_uni, c("inc_s"))$inc_s[1:200, , length(dat_as$Years)])
-    dimnames(inc_s)[[1]] <- 1:200
-    dimnames(inc_s)[[2]] <- c("Female", "Male")
-    inc_s <- data.frame(inc_s)
-    
-    colnames(inc_s) <- c("Sim", "Sex", "value")
-    inc_s$Year <- 2018
-    inc_s$Index <- "sym"
-    
-    rbind(inc_a, inc_s) %>%
-      group_by(Sex, Year, Index) %>%
-      summarise_at("value", list(m = median, vl = ~quantile(., 0.025), vu = ~quantile(., 0.975))) %>%
-      rename(value = m)
-  })
-  
+
   
   fore_cnr <- local({
-    noti <- as.table(extract(fitted_as_uni, c("noti"))$noti[1:200, , ])
-    dimnames(noti)[[1]] <- 1:200
+    noti <- as.table(extract(fitted_as_uni, c("noti"))$noti[1:n_sel, , ])
+    dimnames(noti)[[1]] <- 1:n_sel
     dimnames(noti)[[2]] <- c("Female", "Male")
     dimnames(noti)[[3]] <- dat_as$Years
     noti <- data.frame(noti)
@@ -112,52 +73,36 @@ for (i in 1:length(countries)) {
   
   
   fore_prv <- local({
-    ext <- extract(fitted_as_uni, c("prv", "pr_s", "pr_a"))
+    tt <- 2010:2018 - dat_as$YearSurveyed
     
-    prv_s <- ext$prv
-    prv_a <- ext$prv
+    ext <- extract(fitted_as_uni, c("prv_a", "prv_s", "adr"))
+  
+    data.table::rbindlist(lapply(2010:2018, function(t) {
+      prv_s <- exp(- ext$adr * (t - dat_as$YearSurveyed)) * ext$prv_s
+      prv_a <- exp(- ext$adr * (t - dat_as$YearSurveyed)) * ext$prv_a
+
+      prv_s <- as.table(prv_s[1:n_sel, ])
+      prv_a <- as.table(prv_a[1:n_sel, ])
+      dimnames(prv_s)[[1]] <- dimnames(prv_a)[[1]] <- 1:n_sel
+      dimnames(prv_s)[[2]] <- dimnames(prv_a)[[2]] <- c("Female", "Male")
+      
+      prv_s <- data.frame(prv_s)
+      colnames(prv_s) <- c("Sim", "Sex", "value")
+      prv_s$Year = t
+      prv_s$Stage <- "S"
+      
+      prv_a <- data.frame(prv_a)
+      colnames(prv_a) <- c("Sim", "Sex", "value")
+      prv_a$Year = t
+      prv_a$Stage <- "A"
+      
+      rbind(prv_a, prv_s)
+    }))
     
-    for(i in 1:dim(ext$prv)[3]) {
-      prv_s[, , i] <- prv_s[, , i] * ext$pr_s
-      prv_a[, , i] <- prv_a[, , i] * ext$pr_a
-    }
-    
-    prv_s <- as.table(prv_s[1:200, , ])
-    dimnames(prv_s)[[1]] <- 1:200
-    dimnames(prv_s)[[2]] <- c("Female", "Male")
-    dimnames(prv_s)[[3]] <- dat_as$Years
-    prv_s <- data.frame(prv_s)
-    colnames(prv_s) <- c("Sim", "Sex", "Year", "value")
-    prv_s$Year <- as.numeric(as.character(prv_s$Year))
-    prv_s$Stage <- "S"
-    
-    prv_a <- as.table(prv_a[1:200, , ])
-    dimnames(prv_a)[[1]] <- 1:200
-    dimnames(prv_a)[[2]] <- c("Female", "Male")
-    dimnames(prv_a)[[3]] <- dat_as$Years
-    prv_a <- data.frame(prv_a)
-    colnames(prv_a) <- c("Sim", "Sex", "Year", "value")
-    prv_a$Year <- as.numeric(as.character(prv_a$Year))
-    prv_a$Stage <- "A"
-    
-    rbind(prv_a, prv_s)
-  })
+  })  
   
   
   gs <- list()
-  
-  
-  gs$g_Inc <- rbind(fore_inc, dat_inc %>% filter(Sex != "Total")) %>%
-    mutate(Index = factor(Index, levels = c("asym", "sym", "Inc"))) %>%
-    ggplot() +
-    geom_pointrange(aes(x = Index, y = value, ymin = vl, ymax = vu, colour = Index), size = 1.5) +
-    scale_x_discrete("Incidence definition", labels = c(asym = "A", sym = "S", Inc = "WHO")) + 
-    scale_y_continuous("Incidence rate, per 100 000", labels = function(x) x * 1E5) +
-    scale_colour_discrete("", labels = c(asym = "Est. Asymptomatic TB", sym = "Est. Symptomatic TB", Inc = "WHO estimates")) +
-    facet_grid(.~Sex) +
-    expand_limits(y = 0) +
-    theme(legend.position = "none")
-  
   
   gs$g_CNR <- ggplot(fore_cnr) +
     geom_line(aes(x = Year, y = value, group = Sim), alpha = 0.2, colour = "pink") +
@@ -179,7 +124,6 @@ for (i in 1:length(countries)) {
   
   save(gs, file = paste0("out/g_Fitted_", iso, ".rdata"))
   
-  ggsave(plot = gs$g_Inc, paste0("docs/figs/fit/Inc_", iso, ext), width = 5.5, height = 3.5)
   ggsave(plot = gs$g_CNR, paste0("docs/figs/fit/CNR_", iso, ext), width = 6.5, height = 3.5)
   ggsave(plot = gs$g_Prv, paste0("docs/figs/fit/Prv_", iso, ext), width = 6.5, height = 5.5)
 }

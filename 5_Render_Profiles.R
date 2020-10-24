@@ -34,6 +34,8 @@ for (i in 1:length(countries)) {
   gss <- c(gss, gs)
   load(file = paste0("out/g_Fitted_", iso, ".rdata"))
   gss <- c(gss, gs)
+  load(file = paste0("out/g_Incidence_", iso, ".rdata"))
+  gss$g_Inc <- g_Inc
   
   rmarkdown::render("docs/country/temp_profile.Rmd",
                     output_format = rmarkdown::html_document(toc = T, toc_float = T, smooth_scroll = T, toc_depth = 2),

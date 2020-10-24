@@ -90,4 +90,15 @@ gs$g_Cohort_Sex
 </div>
 
 
+# Incidence estimates
+
+## TB Incidence considering asymptomatic phase
+```{r echo=FALSE, fig.height=5, fig.hold="hold", out.width="90%"}
+gss$g_Inc
+```
+
+
+
+
+
 

@@ -100,7 +100,6 @@ gs$g_Dist <- TTE_all %>%
   theme(legend.position = "bottom", panel.grid.minor.x = element_blank()) +
   expand_limits(x = 0)
 
-
 gs$g_Dist_Sex <- TTE_all %>%
   filter(Sex != "Total") %>%
   ggplot(aes(x = Duration * 12, y = reorder(Country, DA))) +
@@ -111,7 +110,6 @@ gs$g_Dist_Sex <- TTE_all %>%
   facet_grid(.~Sex) +
   theme(legend.position = "bottom", panel.grid.minor.x = element_blank()) +
   expand_limits(x = 0)
-
 
 gs$g_Asym <- TTE_all %>%
   filter(Sex == "Total" & Phase == "A") %>%
