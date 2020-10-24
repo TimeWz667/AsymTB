@@ -9,10 +9,10 @@ frm_mci <- function(ds, digits = 1) {
 }
 
 #### Kenya ----
-load(file = "output/Full/KEN/Cov.rdata")
+load(file = "out/Full/KEN/Cov.rdata")
 
 
-load(file = "output/Full/KEN/Sex.rdata")
+load(file = "out/Full/KEN/Sex.rdata")
 
 ext <- extract(fitted1, pars = c("r_sym", "r_sc"))
 exo <- dataset$exo
@@ -36,7 +36,7 @@ tab_sex
 
 
 
-load(file = "output/Full/KEN/Age.rdata")
+load(file = "out/Full/KEN/Age.rdata")
 
 ext <- extract(fitted1, pars = c("r_sym", "r_sc"))
 exo <- dataset$exo
@@ -59,7 +59,7 @@ tab_age <- data.table::data.table(
 tab_age
 
 
-load(file = "output/Full/KEN/HIV.rdata")
+load(file = "out/Full/KEN/HIV.rdata")
 
 ext <- extract(fitted1, pars = c("r_sym", "r_sc"))
 exo <- dataset$exo
@@ -107,10 +107,10 @@ tab_kenya <- rbind(tab_overall, tab_sex, tab_age, tab_hiv)
 
 
 #### Blantyre ----
-load(file = "output/Full/BLT/Cov.rdata")
+load(file = "out/Full/BLT/Cov.rdata")
 
 
-load(file = "output/Full/BLT/Sex.rdata")
+load(file = "out/Full/BLT/Sex.rdata")
 
 ext <- extract(fitted1, pars = c("r_sym", "r_sc"))
 exo <- dataset$exo
@@ -134,7 +134,7 @@ tab_sex
 
 
 
-load(file = "output/Full/BLT/Age.rdata")
+load(file = "out/Full/BLT/Age.rdata")
 
 ext <- extract(fitted1, pars = c("r_sym", "r_sc"))
 exo <- dataset$exo
@@ -157,7 +157,7 @@ tab_age <- data.table::data.table(
 tab_age
 
 
-load(file = "output/Full/BLT/HIV.rdata")
+load(file = "out/Full/BLT/HIV.rdata")
 
 ext <- extract(fitted1, pars = c("r_sym", "r_sc"))
 exo <- dataset$exo
@@ -180,7 +180,7 @@ tab_hiv <- data.table::data.table(
 tab_hiv
 
 
-load(file = "output/Full/BLT/Total.rdata")
+load(file = "out/Full/BLT/Total.rdata")
 ext <- extract(fitted3, pars = c("r_sym", "r_sc"))
 
 durations <- sapply(1:length(ext$r_sym), function(i) {
@@ -205,9 +205,9 @@ tab_blantyre <- rbind(tab_overall, tab_sex, tab_age, tab_hiv)
 
 
 #### Output ----
-write.csv(tab_blantyre, file = "output/Full/BLT/DurAsym.csv")
-write.csv(tab_kenya, file = "output/Full/KEN/DurAsym.csv")
+write.csv(tab_blantyre, file = "docs/tabs/DurAsym_BLT.csv")
+write.csv(tab_kenya, file = "docs/tabs/DurAsym_KEN.csv")
 
 write.csv(rbind(cbind(Location = "Blantyre", tab_blantyre), 
                 cbind(Location = "Kenya", tab_kenya)), 
-          file = "output/TB_Science/DurAsym.csv")
+          file = "docs/tabs/DurAsym.csv")
