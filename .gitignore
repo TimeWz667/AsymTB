@@ -3,6 +3,7 @@
 .RData
 .Rproj.user/
 .Ruserdata
+
 output/
-data/kenya_prev.csv
-old
+out/
+old/

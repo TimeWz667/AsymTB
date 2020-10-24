@@ -25,32 +25,28 @@ gs$g_CNR
 gss$g_Prv
 ```
 
-# Duration / Time to each state {.tabset}
+# Duration / Time to each state
 
 
 <div class = "row">
 <div class = "col-md-4">
 
-#### Duration measures the time spent in a specific state
-Where
-
- - **Asymptomatic TB**: from TB-detectable to symptom onset
- - **Symptomatic TB**: from symptom onset to notification
-
 #### Time to state mearsures the time between detectable TB to a specific state
+
+  - **TB-detectable**: can be found by diagnostic tools used in TB prevalence surveys
+  - **Symptom onset**: presence of TB-like symptoms
+  - **Care-seeking intention**: having care-seeking intentions
+  - **Notification**: being detected / notified  
+
 
 
 </div>
 <div class = "col-md-8">
-## Duration of each state
+#### Time to each state
 ```{r echo=FALSE, fig.height=5, fig.hold="hold", out.width="90%"}
-gs$g_Duration
+gs$g_Dist
 ```
 
-## Time to each state
-```{r echo=FALSE, fig.height=5, fig.hold="hold", out.width="90%"}
-gs$g_TTE
-```
 </div>
 </div>
 

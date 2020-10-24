@@ -24,46 +24,13 @@ countries <- c(
 )
 
 
-
-### Main ----
-for (i in 1:length(countries)) {
-  iso <- names(countries)[i]
-  country <- countries[i]
-  
-  ### Load data ----
-  load(paste0("out/Duration_", iso, ".rdata"))
-  
-  gs <- list()
-
-  
-  gs$g_Duration <- Durations %>%
-    ggplot() + 
-    stat_halfeye(aes(x = value * 12, y = Sex, fill = Sex), .width = .95, size = 2/3, alpha = 0.8) +
-    scale_y_discrete("") +
-    scale_x_continuous("Duration, month", breaks = c(0, 4, 8, 12, 16, 24, 36)) + 
-    expand_limits(x = 0) +
-    facet_grid(Stage ~., labeller = labeller(Stage = c(sym = "Asymptomatic TB", care = "Symptomatic TB"))) + 
-    theme(legend.position = "none", panel.grid.minor.x = element_blank())
-  
-  gs$g_TTE <- TTE %>%
-    ggplot() + 
-    stat_halfeye(aes(x = value * 12, y = Sex, fill = Sex), .width = .95, size = 2/3, alpha = 0.8) +
-    scale_y_discrete("") +
-    scale_x_continuous("Time since TB-detectable, month", breaks = c(0, 4, 8, 12, 16, 24, 36)) + 
-    expand_limits(x = 0) +
-    facet_grid(Stage ~., labeller = labeller(Stage = c(sym = "Symptom onset", care = "Notification"))) + 
-    theme(legend.position = "none", panel.grid.minor.x = element_blank())
-  
-  save(gs, file = paste0("out/g_Duration_", iso, ".rdata"))
-  
-  ggsave(plot = gs$g_Duration, paste0("docs/figs/duration/Duration_", iso, ext), width = 7.5, height = 4.5)
-  ggsave(plot = gs$g_TTE, paste0("docs/figs/duration/TTE_", iso, ext), width = 7.5, height = 4.5)
-
-}
-
-
-### Meta
-load(file = "out/Duration_All.rdata")
+countries_cs <- c(
+  MWI = "Malawi", 
+  PHL = "Philippines", 
+  TZA = "United Republic of Tanzania", 
+  UGA = "Uganda", #
+  ZMB = "Zambia"
+)
 
 
 countries_lab <- c(
@@ -73,10 +40,57 @@ countries_lab <- c(
 )
 names(countries_lab) <- countries
 
+
+
+### Main ----
+for (i in 1:length(countries)) {
+  iso <- names(countries)[i]
+  country <- countries[i]
+  
+  ### Load data ----
+  load(paste0("out/TTE_", iso, ".rdata"))
+  
+  gs <- list()
+
+  
+  gs$g_Dist <- TTE %>%
+    ggplot(aes(x = Duration * 12)) +
+    stat_halfeye(aes(fill = Phase), .width = .95, size = 2/3, alpha = 0.8) +
+    scale_y_discrete("Density") +
+    scale_x_continuous("Time since TB-detectable, month", breaks = c(0, 4, 8, 12, 16, 24, 36)) + 
+    scale_fill_discrete("End point", labels = c(A = "Symptom onset", S = "Care-seeking intention", C = "Notification")) +
+    facet_grid(Sex~.) +
+    theme(legend.position = "bottom", panel.grid.minor.x = element_blank()) +
+    expand_limits(x = 0)
+  
+  gs$g_Asym <- TTE %>%
+    filter(Phase == "A") %>%
+    ggplot(aes(x = Duration * 12)) +
+    stat_halfeye(aes(fill = Phase), .width = .95, size = 2/3, alpha = 0.8) +
+    scale_y_discrete("Density") +
+    scale_x_continuous("Time since TB-detectable, month", breaks = c(0, 4, 8, 12, 16, 24, 36)) + 
+    scale_fill_discrete("End point", labels = c(A = "Symptom onset")) +
+    facet_grid(Sex~.) +
+    theme(legend.position = "bottom", panel.grid.minor.x = element_blank()) +
+    expand_limits(x = 0)
+  
+  
+  save(gs, file = paste0("out/g_TTE_", iso, ".rdata"))
+  
+  ggsave(plot = gs$g_Dist, paste0("docs/figs/duration/TTE_", iso, ext), width = 7.5, height = 4.5)
+  ggsave(plot = gs$g_Asym, paste0("docs/figs/duration/Asym_", iso, ext), width = 7.5, height = 4.5)
+
+}
+
+
+### Meta
+load(file = "out/TTE_All.rdata")
+
+
 gs <- list()
 
 
-gs$g_Dist <- sim_dur %>%
+gs$g_Dist <- TTE_all %>%
   filter(Sex == "Total") %>%
   ggplot(aes(x = Duration * 12, y = reorder(Country, DA))) +
   stat_halfeye(aes(fill = Phase), .width = .95, size = 2/3, alpha = 0.8) +
@@ -84,10 +98,10 @@ gs$g_Dist <- sim_dur %>%
   scale_x_continuous("Time since TB-detectable, month", breaks = c(0, 4, 8, 12, 16, 24, 36)) + 
   scale_fill_discrete("End point", labels = c(A = "Symptom onset", S = "Care-seeking intention", C = "Notification")) +
   theme(legend.position = "bottom", panel.grid.minor.x = element_blank()) +
-  expand_limits(y = 0)
+  expand_limits(x = 0)
 
 
-gs$g_Dist_Sex <- sim_dur %>%
+gs$g_Dist_Sex <- TTE_all %>%
   filter(Sex != "Total") %>%
   ggplot(aes(x = Duration * 12, y = reorder(Country, DA))) +
   stat_halfeye(aes(fill = Phase), .width = .95, size = 2/3, alpha = 0.8) +
@@ -96,11 +110,36 @@ gs$g_Dist_Sex <- sim_dur %>%
   scale_fill_discrete("End point", labels = c(A = "Symptom onset", S = "Care-seeking intention", C = "Notification")) +
   facet_grid(.~Sex) +
   theme(legend.position = "bottom", panel.grid.minor.x = element_blank()) +
-  expand_limits(y = 0)
+  expand_limits(x = 0)
 
 
-save(gs, file = "out/g_Duration_All.rdata")
+gs$g_Asym <- TTE_all %>%
+  filter(Sex == "Total" & Phase == "A") %>%
+  ggplot(aes(x = Duration * 12, y = reorder(Country, DA))) +
+  stat_halfeye(aes(fill = Phase), .width = .95, size = 2/3, alpha = 0.8) +
+  scale_y_discrete("Country", labels = countries_lab) +
+  scale_x_continuous("Time since TB-detectable, month", breaks = c(0, 4, 8, 12, 16, 24, 36)) + 
+  scale_fill_discrete("End point", labels = c(A = "Symptom onset")) +
+  theme(legend.position = "bottom", panel.grid.minor.x = element_blank()) +
+  expand_limits(x = 0)
+
+gs$g_Asym_Sex <- TTE_all %>%
+  filter(Sex != "Total" & Phase == "A") %>%
+  ggplot(aes(x = Duration * 12, y = reorder(Country, DA))) +
+  stat_halfeye(aes(fill = Phase), .width = .95, size = 2/3, alpha = 0.8) +
+  scale_y_discrete("Country", labels = countries_lab) +
+  scale_x_continuous("Time since TB-detectable, month", breaks = c(0, 4, 8, 12, 16, 24, 36)) + 
+  scale_fill_discrete("End point", labels = c(A = "Symptom onset")) +
+  facet_grid(.~Sex) +
+  theme(legend.position = "bottom", panel.grid.minor.x = element_blank()) +
+  expand_limits(x = 0)
+
+
+save(gs, file = "out/g_TTE_All.rdata")
 
 ggsave(plot = gs$g_Dist, paste0("docs/figs/duration/TTE_All", ext), width = 5.5, height = 4.5)
-ggsave(plot = gs$g_Dist_Sex, paste0("docs/figs/duration/TTE_All_Sex", ext), width = 7.5, height = 4.5)
+ggsave(plot = gs$g_Dist_Sex, paste0("docs/figs/duration/TTE_Sex_All", ext), width = 7.5, height = 4.5)
+
+ggsave(plot = gs$g_Asym, paste0("docs/figs/duration/Asym_All", ext), width = 5.5, height = 4.5)
+ggsave(plot = gs$g_Asym_Sex, paste0("docs/figs/duration/Asym_Sex_All", ext), width = 7.5, height = 4.5)
 

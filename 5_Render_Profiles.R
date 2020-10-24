@@ -30,7 +30,7 @@ for (i in 1:length(countries)) {
   
   load(file = paste0("out/g_Cascade_", iso, ".rdata"))
   gss <- c(gs)
-  load(file = paste0("out/g_Duration_", iso, ".rdata"))
+  load(file = paste0("out/g_TTE_", iso, ".rdata"))
   gss <- c(gss, gs)
   load(file = paste0("out/g_Fitted_", iso, ".rdata"))
   gss <- c(gss, gs)
