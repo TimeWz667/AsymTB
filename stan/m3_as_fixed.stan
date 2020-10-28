@@ -99,7 +99,6 @@ generated quantities {
   
   real dur_a[n_gp];
   real dur_s[n_gp];
-  real del[n_gp];
 
   for (j in 1:n_gp) {
     // prevalence to prevalence survey data
@@ -118,6 +117,5 @@ generated quantities {
     
     dur_a[j] = 1 / (ra[j] + r_sym);
     dur_s[j] = 1 / (rs[j] + r_det);
-    del[j] = dur_s[j];
   }
 }

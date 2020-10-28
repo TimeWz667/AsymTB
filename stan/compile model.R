@@ -27,4 +27,4 @@ m3_as_fixed <- stan_model("stan/m3_as_fixed.stan")
 m3_asc_uni <- stan_model("stan/m3_asc_uni.stan")
 m3_asc_fixed <- stan_model("stan/m3_asc_fixed.stan")
 
-m3_anp <- stan_model("stan/m3_anp.stan")
+# m3_anp <- stan_model("stan/m3_anp.stan")

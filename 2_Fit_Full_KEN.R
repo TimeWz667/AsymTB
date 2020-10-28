@@ -44,15 +44,15 @@ model <- readRDS(file = "stan/m0.rds")
 
 exo <- get_exo(F, dr, untr = "no_untr", bg_death = T)
 fitted1 <- sampling(model, data = c(dat, exo), iter = 3000, chain = 2)
-summary(fitted1, pars = c("r_sym", "del_sn", "del_sp", "p_sp", "r_tr"))$summary
+summary(fitted1, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr"))$summary
 
 exo <- get_exo(F, dr, untr = "as_sn", bg_death = T)
 fitted2 <- sampling(model, data = c(dat, exo), iter = 3000, chain = 2)
-summary(fitted2, pars = c("r_sym", "del_sn", "del_sp", "p_sp", "r_tr"))$summary
+summary(fitted2, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr"))$summary
 
 exo <- get_exo(F, dr, untr = "full", bg_death = T)
 fitted3 <- sampling(model, data = c(dat, exo), iter = 3000, chain = 2)
-summary(fitted3, pars = c("r_sym", "del_sn", "del_sp", "p_sp", "r_tr"))$summary
+summary(fitted3, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr"))$summary
 
 dataset <- list(
   prv = prv,
@@ -60,7 +60,7 @@ dataset <- list(
   exo = exo
 )
 
-save(fitted1, fitted2, fitted3, dataset, file = "output/Full/KEN/Total.rdata")
+save(fitted1, fitted2, fitted3, dataset, file = "out/Full/KEN/Total.rdata")
 
 
 #### Marginalised Age ----
@@ -105,19 +105,19 @@ exo <- get_exo(rep(F, nrow(prv)), dr, untr = "full", bg_death = T)
 
 model <- readRDS(file = "stan/m1_uni.rds")
 fitted0 <- sampling(model, data = c(dat, exo), iter = 3000, chain = 2)
-summary(fitted0, pars = c("r_sym", "del_sn", "del_sp", "p_sp", "r_tr"))$summary
+summary(fitted0, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr"))$summary
 
 model <- readRDS(file = "stan/m1_duration_free.rds")
 fitted1 <- sampling(model, data = c(dat, exo), iter = 3000, chain = 2)
-summary(fitted1, pars = c("r_sym", "del_sn", "del_sp", "p_sp", "r_tr"))$summary
+summary(fitted1, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr"))$summary
 
 model <- readRDS(file = "stan/m1_fixed.rds")
 fitted2 <- sampling(model, data = c(dat, exo), iter = 3000, chain = 2)
-summary(fitted2, pars = c("r_sym", "del_sn", "del_sp", "p_sp", "r_tr"))$summary
+summary(fitted2, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr"))$summary
 
 model <- readRDS(file = "stan/m1_reg.rds")
 fitted3 <- sampling(model, data = c(dat, exo), iter = 3000, chain = 2)
-summary(fitted3, pars = c("r_sym", "del_sn", "del_sp", "p_sp", "r_tr", "lrr_cs_sn", "lrr_cs_sp", "lrr_sym"))$summary
+summary(fitted3, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr", "lrr_cs_sn", "lrr_cs_sp", "lrr_sym"))$summary
 
 wts <- loo::loo_model_weights(list(loo(fitted0, "log_lik_pr"), 
                                    loo(fitted1, "log_lik_pr"), 
@@ -131,7 +131,7 @@ dataset <- list(
   exo = exo
 )
 
-save(fitted0, fitted1, fitted2, fitted3, dataset, file = "output/Full/KEN/Age.rdata")
+save(fitted0, fitted1, fitted2, fitted3, dataset, file = "out/Full/KEN/Age.rdata")
 
 
 #### Marginalised Sex ----
@@ -175,19 +175,19 @@ exo <- get_exo(rep(F, nrow(prv)), dr, untr = "full", bg_death = T)
 
 model <- readRDS(file = "stan/m1_uni.rds")
 fitted0 <- sampling(model, data = c(dat, exo), iter = 3000, chain = 2)
-summary(fitted0, pars = c("r_sym", "del_sn", "del_sp", "p_sp", "r_tr"))$summary
+summary(fitted0, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr"))$summary
 
 model <- readRDS(file = "stan/m1_duration_free.rds")
 fitted1 <- sampling(model, data = c(dat, exo), iter = 3000, chain = 2)
-summary(fitted1, pars = c("r_sym", "del_sn", "del_sp", "p_sp", "r_tr"))$summary
+summary(fitted1, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr"))$summary
 
 model <- readRDS(file = "stan/m1_fixed.rds")
 fitted2 <- sampling(model, data = c(dat, exo), iter = 3000, chain = 2)
-summary(fitted2, pars = c("r_sym", "del_sn", "del_sp", "p_sp", "r_tr"))$summary
+summary(fitted2, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr"))$summary
 
 model <- readRDS(file = "stan/m1_reg.rds")
 fitted3 <- sampling(model, data = c(dat, exo), iter = 3000, chain = 2)
-summary(fitted3, pars = c("r_sym", "del_sn", "del_sp", "p_sp", "r_tr", "lrr_cs_sn", "lrr_cs_sp", "lrr_sym"))$summary
+summary(fitted3, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr", "lrr_cs_sn", "lrr_cs_sp", "lrr_sym"))$summary
 
 wts <- loo::loo_model_weights(list(loo(fitted0, "log_lik_pr"), 
                                    loo(fitted1, "log_lik_pr"), 
@@ -200,7 +200,7 @@ dataset <- list(
   exo = exo
 )
 
-save(fitted0, fitted1, fitted2, fitted3, dataset, file = "output/Full/KEN/Sex.rdata")
+save(fitted0, fitted1, fitted2, fitted3, dataset, file = "out/Full/KEN/Sex.rdata")
 
 
 
@@ -245,19 +245,19 @@ exo <- get_exo(prv$HIV, rep(dr, nrow(prv)), untr = "full", bg_death = T)
 
 model <- readRDS(file = "stan/m1_uni.rds")
 fitted0 <- sampling(model, data = c(dat, exo), iter = 3000, chain = 2)
-summary(fitted0, pars = c("r_sym", "del_sn", "del_sp", "p_sp", "r_tr"))$summary
+summary(fitted0, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr"))$summary
 
 model <- readRDS(file = "stan/m1_duration_free.rds")
 fitted1 <- sampling(model, data = c(dat, exo), iter = 3000, chain = 2)
-summary(fitted1, pars = c("r_sym", "del_sn", "del_sp", "p_sp", "r_tr"))$summary
+summary(fitted1, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr"))$summary
 
 model <- readRDS(file = "stan/m1_fixed.rds")
 fitted2 <- sampling(model, data = c(dat, exo), iter = 3000, chain = 2)
-summary(fitted2, pars = c("r_sym", "del_sn", "del_sp", "p_sp", "r_tr"))$summary
+summary(fitted2, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr"))$summary
 
 model <- readRDS(file = "stan/m1_reg.rds")
 fitted3 <- sampling(model, data = c(dat, exo), iter = 3000, chain = 2)
-summary(fitted3, pars = c("r_sym", "del_sn", "del_sp", "p_sp", "r_tr", "lrr_cs_sn", "lrr_cs_sp", "lrr_sym"))$summary
+summary(fitted3, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr", "lrr_cs_sn", "lrr_cs_sp", "lrr_sym"))$summary
 
 wts <- loo::loo_model_weights(list(loo(fitted0, "log_lik_pr"), 
                                    loo(fitted1, "log_lik_pr"), 
@@ -270,7 +270,7 @@ dataset <- list(
   exo = exo
 )
 
-save(fitted0, fitted1, fitted2, fitted3, dataset, file = "output/Full/KEN/HIV.rdata")
+save(fitted0, fitted1, fitted2, fitted3, dataset, file = "out/Full/KEN/HIV.rdata")
 
 
 
@@ -315,7 +315,7 @@ exo <- get_exo(prv$HIV, dr, untr = "full", bg_death = T)
 model <- readRDS(file = "stan/m2_cov.rds")
 fitted_full <- sampling(model, data = c(dat, exo), iter = 7500, warmup = 6000, chain = 2)
 
-summary(fitted_full, pars = c("r_sym", "del_sn", "del_sp"))$summary
+summary(fitted_full, pars = c("r_sym", "r_det_sn", "r_det_sp"))$summary
 summary(fitted_full, pars = c("lrr_cs_sn", "lrr_cs_sp", "lrr_sym"))$summary
 
 dataset <- list(
@@ -324,4 +324,4 @@ dataset <- list(
   exo = exo
 )
 
-save(fitted_full, dataset, file = "output/Full/KEN/Cov.rdata")
+save(fitted_full, dataset, file = "out/Full/KEN/Cov.rdata")

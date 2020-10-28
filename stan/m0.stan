@@ -104,7 +104,9 @@ generated quantities {
   vector<lower=0>[n_t] inc_s;
   vector<lower=0>[n_t] noti;
   vector<lower=0>[n_t] cdr;
-  
+  real dur_a;
+  real dur_sn;
+  real dur_sp;
 
   // incidence estimates
   inc_a = (ra * pr_a + (rn + r_det_sn) * pr_sn + (rp + r_det_sp) * pr_sp - adr) * prv;
@@ -112,4 +114,7 @@ generated quantities {
   noti = prv * pr_sn * r_det_sn + prv * pr_sp * r_det_sp;
   cdr = noti ./ inc_a;
 
+  dur_a = 1 / (ra + r_sym);
+  dur_sn = 1 / (rn + r_tr + r_det_sn);
+  dur_sp = 1 / (rp + r_det_sp);
 }

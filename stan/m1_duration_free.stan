@@ -120,6 +120,10 @@ generated quantities {
   real log_lik_noti[n_t, 2, n_gp];
   real log_lik_pr[3, n_gp];
 
+  real dur_a[n_gp];
+  real dur_sn[n_gp];
+  real dur_sp[n_gp];
+
   for (j in 1:n_gp) {
     // prevalence to prevalence survey data
     log_lik_pr[1, j] = binomial_lpmf(Asym[j] | N[j], prv_a[j]);
@@ -131,5 +135,9 @@ generated quantities {
       log_lik_noti[i, 1, j] = poisson_lpmf(NotiSn[j, i] | nr_sn[j, i] * Pop[j, i]);
       log_lik_noti[i, 2, j] = poisson_lpmf(NotiSp[j, i] | nr_sp[j, i] * Pop[j, i]);
     }
+    
+    dur_a[j] = 1 / (ra[j] + r_sym[j]);
+    dur_sn[j] = 1 / (rn[j] + r_tr + r_det_sn[j]);
+    dur_sp[j] = 1 / (rp[j] + r_det_sp[j]);
   }
 }
