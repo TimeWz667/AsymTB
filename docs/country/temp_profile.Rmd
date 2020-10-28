@@ -25,6 +25,7 @@ gs$g_CNR
 gss$g_Prv
 ```
 
+\newpage
 # Duration / Time to each state
 
 
@@ -42,7 +43,7 @@ gss$g_Prv
 
 </div>
 <div class = "col-md-8">
-#### Time to each state
+## Time to each state
 ```{r echo=FALSE, fig.height=5, fig.hold="hold", out.width="90%"}
 gs$g_Dist
 ```
@@ -53,7 +54,7 @@ gs$g_Dist
 
 
 
-
+\newpage
 # Healthcare cascade {.tabset}
 
 <div class = "row">
@@ -90,6 +91,7 @@ gs$g_Cohort_Sex
 </div>
 
 
+\newpage
 # Incidence estimates
 
 ## TB Incidence considering asymptomatic phase
