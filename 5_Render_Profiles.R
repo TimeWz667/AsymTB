@@ -41,6 +41,14 @@ for (i in 1:length(countries)) {
                     output_format = rmarkdown::html_document(toc = T, toc_float = T, smooth_scroll = T, toc_depth = 2),
                     output_file = paste0("Profile_", iso, ".html"),
                     envir = list(gs = gss, country = country, iso = iso))
+  
+  if (iso %in% c("KEN")) {
+    rmarkdown::render("docs/country/temp_profile.Rmd",
+                    output_format = rmarkdown::pdf_document(toc = T, toc_depth = 2),
+                    output_file = paste0("Profile_", iso, ".pdf"),
+                    envir = list(gs = gss, country = country, iso = iso))
+  }
+  
 }
 
 
