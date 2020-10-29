@@ -125,3 +125,78 @@ TTE_all <- data.table::rbindlist(TTE_all)
 
 save(TTE_all, file = "out/TTE_All.rdata")
 
+
+
+### Compare to P:N ratio
+
+
+Dur_sim_all <- list()
+Dur_data_all <- list()
+
+for (i in 1:length(countries)) {
+  iso <- names(countries)[i]
+  country <- countries[i]
+  
+  
+  ### Load data ----
+  load(paste0("out/ASC/Post_", iso, ".rdata"))
+  
+  wts <- extract(fitted_as_uni, pars = "inc_a")$inc_a
+  wts <- wts[, , dim(wts)[3]]
+  wts <- wts / rowSums(wts)
+  
+  
+  ### Duration ----
+  
+  Dur_data <- with(dat_as, {
+    prev1 <- (sum(Asym) + sum(Sym)) / sum(N)
+    prev2 <- sum(Sym) / sum(N)
+    
+    
+    noti <- sum(Noti[, Years == YearSurveyed]) / sum(Pop[, Years == YearSurveyed])
+    
+    data.table::data.table(
+      Country = country,
+      ISO = iso,
+      Def = c("D1", "D2"),
+      Type = "Data",
+      m = c(prev1 / noti, prev2 / noti)
+    )
+  })
+
+  
+  Dur_sim <- with(extract(fitted_as_uni, pars = c("nr", "prv", "pr_s", "dur_s")), {
+    n_t <- dat_as$n_t
+    
+    prev1 <- rowSums(prv[, , n_t] * wts)
+    prev2 <- rowSums(prv[, , n_t] * wts * pr_s)
+    
+    noti <- rowSums(nr[, , n_t] * wts)
+    
+    data.table::data.table(
+      Country = country,
+      ISO = iso,
+      Type = "Fitted",
+      D1 = prev1 / noti,
+      D2 = mean(prev2 / noti),
+      D3 = mean(dur_s)
+    )
+  }) %>%
+    pivot_longer(c(D1, D2, D3), names_to = "Def", values_to = "Duration") %>%
+    group_by(Country, ISO, Type, Def) %>%
+    summarise(m = mean(Duration), l = quantile(Duration, 0.025), u = quantile(Duration, 0.975))
+  
+  
+  Dur_data_all[[i]] <- Dur_data
+  Dur_sim_all[[i]] <- Dur_sim
+  
+  save(Dur_data, Dur_sim, file = paste0("out/PN_", iso, ".rdata"))
+  
+}
+
+Dur_data_all <- data.table::rbindlist(Dur_data_all)
+Dur_sim_all <- data.table::rbindlist(Dur_sim_all)
+
+
+save(Dur_data_all, Dur_sim_all, file = paste0("out/PN_All.rdata"))
+
