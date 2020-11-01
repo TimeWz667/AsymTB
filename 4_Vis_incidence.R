@@ -3,6 +3,9 @@ rm(list = ls())
 library(ggplot2)
 
 
+theme_set(theme_bw() + theme(text = element_text(family = "sans")))
+
+
 countries <- c(
   KHM = "Cambodia",
   KEN = "Kenya",

@@ -166,12 +166,13 @@ for (i in 1:length(countries)) {
 
   
   Dur_sim <- with(extract(fitted_as_uni, pars = c("nr", "prv", "pr_s", "dur_s")), {
-    n_t <- dat_as$n_t
     
-    prev1 <- rowSums(prv[, , n_t] * wts)
-    prev2 <- rowSums(prv[, , n_t] * wts * pr_s)
+    ti <- dat_as$Years == dat_as$YearSurveyed
     
-    noti <- rowSums(nr[, , n_t] * wts)
+    prev1 <- rowSums(prv[, , dat_as$Years == dat_as$YearSurveyed] * wts)
+    prev2 <- rowSums(prv[, , dat_as$Years == dat_as$YearSurveyed] * wts * pr_s)
+    
+    noti <- rowSums(nr[, , dat_as$Years == dat_as$YearSurveyed] * wts)
     
     data.table::data.table(
       Country = country,
