@@ -107,5 +107,66 @@ data.frame(
   geom_pointrange(aes(x = Untr, y = M, ymin = L, ymax = U, colour = Bg))
 
 
+load("data/Input_KEN.rdata")
+
+
+###
+n_iter = 3000
+n_collect = 1000
+n_chain = 3
+
+
+#### Aggregated ----
+prv <- prevalence
+
+noti <- notification %>%
+  group_by(Year) %>%
+  summarise(n_all = round(sum(n_all)), n_sp = round(sum(n_sp)), n_sn = round(sum(n_sn)), Pop = round(sum(Pop)))
+
+yrs <- sort(unique(noti$Year))
+n_t <- length(yrs)
+
+dat <- list(
+  YearSurveyed = prv$Year[1],
+  N = round(sum(prv$N)),
+  Asym = round(sum(prv$Asym)),
+  Sn = round(sum(prv$SymSn)),
+  Sp = round(sum(prv$SymSp)),
+  Years = yrs,
+  Pop = noti$Pop,
+  NotiSn = noti$n_sn,
+  NotiSp = noti$n_sp,
+  n_t = n_t
+)
+
+dr <- mortality %>%
+  group_by(Year) %>%
+  summarise(DeaR = sum(DeaR * Pop) / sum(Pop))
+dr <- dr$DeaR
+
+
+
+model <- readRDS(file = "stan/m0.rds")
+
+exo <- get_exo(F, dr, untr = "no_untr", bg_death = T)
+fitted1 <- sampling(model, data = c(dat, exo), iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
+summary(fitted1, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr"))$summary
+
+exo <- get_exo(F, dr, untr = "as_sn", bg_death = T)
+fitted2 <- sampling(model, data = c(dat, exo), iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
+summary(fitted2, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr"))$summary
+
+exo <- get_exo(F, dr, untr = "full", bg_death = T)
+fitted3 <- sampling(model, data = c(dat, exo), iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
+summary(fitted3, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr"))$summary
+
+dataset <- list(
+  prv = prv,
+  noti = noti,
+  exo = exo
+)
+
+save(fitted1, fitted2, fitted3, dataset, file = "out/Full/KEN/Total.rdata")
+
 
 

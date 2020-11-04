@@ -7,6 +7,14 @@ options(mc.cores = min(5, parallel::detectCores()))
 source("R/get_exo.R")
 
 
+###
+n_iter = 3000
+n_collect = 1000
+n_chain = 3
+
+###
+
+
 countries <- c(
   KHM = "Cambodia",
   KEN = "Kenya",
@@ -21,6 +29,7 @@ countries <- c(
 )
 
 countries_cs <- c(
+  KEN = "Kenya",
   MWI = "Malawi", 
   PHL = "Philippines", 
   TZA = "United Republic of Tanzania", 
@@ -30,16 +39,36 @@ countries_cs <- c(
 
 
 
-for (i in c(1, 8, 9)) { #1:length(countries)) {
-  iso <- names(countries)[i]
+for (i in 1:length(countries)) {
+  iso <- glue::as_glue(names(countries)[i])
   country <- countries[i]
   
   print(country)
   
-  load(paste0("data/Input_", iso, ".rdata"))
+  load("data/Input_" + iso + ".rdata")
   
-  prv <- prevalence
-  noti <- notification %>% arrange(Sex, Year)
+  if (country %in% countries_cs) {
+    prv <- prevalence %>%
+      group_by(Year, Sex) %>%
+      summarise(N = sum(N),
+                Asym = sum(Asym),
+                Sym = sum(Sym),
+                SymNC = sum(SymNC),
+                SymCS = sum(SymCS))
+  } else {
+    prv <- prevalence %>%
+      group_by(Year, Sex) %>%
+      summarise(N = sum(N),
+                Asym = sum(Asym),
+                Sym = sum(Sym))
+  }
+  
+  
+  noti <- notification %>% 
+    group_by(Year, Sex) %>%
+    summarise(n_all = sum(n_all), Pop = sum(Pop)) %>%
+    arrange(Sex, Year)
+    
   
   if (iso == "KHM") {
     noti <- noti %>% filter(Year >= 2014)
@@ -51,7 +80,9 @@ for (i in c(1, 8, 9)) { #1:length(countries)) {
     noti <- noti %>% filter(Year >= 2016)
   }
   
-  dr <- mortality$DeaR
+  dr <- (mortality %>%
+           group_by(Year, Sex) %>%
+           summarise(DeaR = sum(DeaR * Pop) / sum(Pop), Pop = sum(Pop)))$DeaR
   
   yrs <- sort(unique(noti$Year))
   n_t <- length(yrs)
@@ -77,11 +108,14 @@ for (i in c(1, 8, 9)) { #1:length(countries)) {
   dat_as <- c(dat, exo)
   
   model <- readRDS(file = "stan/m3_as_uni.rds")
-  fitted_as_uni <- sampling(model, data = dat_as, iter = 3000, chain = 2)
+  fitted_as_uni <- sampling(model, data = dat_as, iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
   summary(fitted_as_uni, pars = c("r_sym", "r_det", "adr", "dur_a", "dur_s"))$summary
+  check_divergences(fitted_as_uni)
+  
   
   model <- readRDS(file = "stan/m3_as_fixed.rds")
-  fitted_as_fixed <- sampling(model, data = dat_as, iter = 3000, chain = 2)
+  fitted_as_fixed <- sampling(model, data = dat_as, iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
+  check_divergences(fitted_as_fixed)
   summary(fitted_as_fixed, pars = c("r_sym", "r_det", "adr", "dur_a", "dur_s"))$summary
   
   if (country %in% countries_cs) {
@@ -104,11 +138,11 @@ for (i in c(1, 8, 9)) { #1:length(countries)) {
     dat_asc <- c(dat, exo)
     
     model <- readRDS(file = "stan/m3_asc_uni.rds")
-    fitted_asc_uni <- sampling(model, data = dat_asc, iter = 3000, chain = 2)
+    fitted_asc_uni <- sampling(model, data = dat_asc, iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
     summary(fitted_asc_uni, pars = c("r_sym", "r_aware", "r_det", "adr", "dur_a", "dur_s", "dur_c"))$summary
     
     model <- readRDS(file = "stan/m3_asc_fixed.rds")
-    fitted_asc_fixed <- sampling(model, data = dat_asc, iter = 3000, chain = 2)
+    fitted_asc_fixed <- sampling(model, data = dat_asc, iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
     summary(fitted_asc_fixed, pars = c("r_sym", "r_aware", "r_det", "adr", "dur_a", "dur_s", "dur_c"))$summary
     
     save(fitted_as_uni, fitted_as_fixed, dat_as,

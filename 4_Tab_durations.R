@@ -14,74 +14,64 @@ fetch_dur_a <- function(sub) {
             format(quantile(ds, 0.975, na.rm = T), nsmall = digits, digits = digits))
   }
   
-  
-  
   sub <- glue::as_glue(sub)
   
-  load(file = "out/Full/" + sub +"/Cov.rdata")
-
-  load(file = "out/Full/" + sub +"/Sex.rdata")
+  load(file = "out/Full/" + sub +"/All.rdata")
   
-  ext <- extract(fitted1, pars = c("r_sym", "dur_a"))
-  exo <- dataset$exo
+  ext <- extract(fitted_sex, pars = c("r_sym", "dur_a"))
+  exo <- ds_sex$exo
   
 
   tab_sex <- data.table::data.table(
     Variable = "Sex",
-    Value = dataset$prv$Sex, 
+    Value = ds_sex$prv$Sex, 
     Duration = apply(ext$dur_a * 12, 2, frm_mci),
     Rate = apply(ext$r_sym, 2, frm_mci, digit = 2),
-    RR_uni = c("reference", frm_mci(exp(extract(fitted3, pars = c("lrr_sym"))[[1]][, 2]), digit = 2)),
+    RR_uni = c("reference", frm_mci(exp(extract(fitted_sex_cov, pars = c("lrr_sym"))[[1]][, 2]), digit = 2)),
     RR_multi = c("reference", frm_mci(exp(extract(fitted_full, c("lrr_sym"))[[1]][, 1]), digit = 2))
   )
   tab_sex
   
+
+  ext <- extract(fitted_age, pars = c("r_sym", "dur_a"))
+  exo <- ds_age$exo
   
-  load(file = "out/Full/" + sub +"/Age.rdata")
-  
-  ext <- extract(fitted1, pars = c("r_sym", "dur_a"))
-  exo <- dataset$exo
-  
-  n_agp <- length(unique(dataset$prv$Agp))
+  n_agp <- length(unique(ds_age$prv$Agp))
   if (n_agp > 2) {
     tab_age <- data.table::data.table(
       Variable = "Age",
-      Value = dataset$prv$Agp, 
+      Value = ds_age$prv$Agp, 
       Duration = apply(ext$dur_a * 12, 2, frm_mci),
       Rate = apply(ext$r_sym, 2, frm_mci, digit = 2),
-      RR_uni = c("reference", apply(exp(extract(fitted3, pars = c("lrr_sym"))[[1]][, 2:n_agp]), 2, frm_mci, digit = 2)),
+      RR_uni = c("reference", apply(exp(extract(fitted_age_cov, pars = c("lrr_sym"))[[1]][, 2:n_agp]), 2, frm_mci, digit = 2)),
       RR_multi = c("reference", apply(exp(extract(fitted_full, c("lrr_sym"))[[1]][, 2:n_agp]), 2, frm_mci, digit = 2))
     )
   } else {
     tab_age <- data.table::data.table(
       Variable = "Age",
-      Value = dataset$prv$Agp, 
+      Value = ds_age$prv$Agp, 
       Duration = apply(ext$dur_a * 12, 2, frm_mci),
       Rate = apply(ext$r_sym, 2, frm_mci, digit = 2),
-      RR_uni = c("reference", frm_mci(exp(extract(fitted3, pars = c("lrr_sym"))[[1]][, 2]), digit = 2)),
+      RR_uni = c("reference", frm_mci(exp(extract(fitted_age_cov, pars = c("lrr_sym"))[[1]][, 2]), digit = 2)),
       RR_multi = c("reference", frm_mci(exp(extract(fitted_full, c("lrr_sym"))[[1]][, 2]), digit = 2))
     )
   }
 
-  
-  load(file = "out/Full/" + sub + "/HIV.rdata")
-  
-  ext <- extract(fitted1, pars = c("r_sym", "dur_a"))
-  exo <- dataset$exo
+  ext <- extract(fitted_hiv, pars = c("r_sym", "dur_a"))
+  exo <- ds_hiv$exo
   
   tab_hiv <- data.table::data.table(
     Variable = "HIV",
-    Value = rev(dataset$prv$HIV), 
+    Value = rev(ds_hiv$prv$HIV), 
     Duration = rev(apply(ext$dur_a * 12, 2, frm_mci)),
     Rate = rev(apply(ext$r_sym, 2, frm_mci, digit = 2)),
-    RR_uni = c("reference", frm_mci(1/exp(extract(fitted3, pars = c("lrr_sym"))[[1]][, 2]), digit = 2)),
+    RR_uni = c("reference", frm_mci(1/exp(extract(fitted_hiv_cov, pars = c("lrr_sym"))[[1]][, 2]), digit = 2)),
     RR_multi = c("reference", frm_mci(exp(extract(fitted_full, c("lrr_sym"))[[1]][, n_agp + 1]), digit = 2))
   )
   tab_hiv
   
-  
-  load(file = "out/Full/" + sub + "/Total.rdata")
-  ext <- extract(fitted3, pars = c("r_sym", "dur_a"))
+
+  ext <- extract(fitted_total, pars = c("r_sym", "dur_a"))
   
   
   tab_overall <- data.table::data.table(
@@ -106,73 +96,64 @@ fetch_dur_sn <- function(sub) {
             format(quantile(ds, 0.975, na.rm = T), nsmall = digits, digits = digits))
   }
   
-  
   sub <- glue::as_glue(sub)
   
-  load(file = "out/Full/" + sub +"/Cov.rdata")
+  load(file = "out/Full/" + sub +"/All.rdata")
   
-  load(file = "out/Full/" + sub +"/Sex.rdata")
-  
-  ext <- extract(fitted1, pars = c("r_det_sn", "dur_sn"))
-  exo <- dataset$exo
+  ext <- extract(fitted_sex, pars = c("r_det_sn", "dur_sn"))
+  exo <- ds_sex$exo
   
   
   tab_sex <- data.table::data.table(
     Variable = "Sex",
-    Value = dataset$prv$Sex, 
+    Value = ds_sex$prv$Sex, 
     Duration = apply(ext$dur_sn * 12, 2, frm_mci),
     Rate = apply(ext$r_det_sn, 2, frm_mci, digit = 2),
-    RR_uni = c("reference", frm_mci(exp(extract(fitted3, pars = c("lrr_cs_sn"))[[1]][, 2]), digit = 2)),
+    RR_uni = c("reference", frm_mci(exp(extract(fitted_sex_cov, pars = c("lrr_cs_sn"))[[1]][, 2]), digit = 2)),
     RR_multi = c("reference", frm_mci(exp(extract(fitted_full, c("lrr_cs_sn"))[[1]][, 1]), digit = 2))
   )
   tab_sex
   
   
-  load(file = "out/Full/" + sub +"/Age.rdata")
+  ext <- extract(fitted_age, pars = c("r_det_sn", "dur_sn"))
+  exo <- ds_age$exo
   
-  ext <- extract(fitted1, pars = c("r_det_sn", "dur_sn"))
-  exo <- dataset$exo
-  
-  n_agp <- length(unique(dataset$prv$Agp))
+  n_agp <- length(unique(ds_age$prv$Agp))
   if (n_agp > 2) {
     tab_age <- data.table::data.table(
       Variable = "Age",
-      Value = dataset$prv$Agp, 
+      Value = ds_age$prv$Agp, 
       Duration = apply(ext$dur_sn * 12, 2, frm_mci),
       Rate = apply(ext$r_det_sn, 2, frm_mci, digit = 2),
-      RR_uni = c("reference", apply(exp(extract(fitted3, pars = c("lrr_cs_sn"))[[1]][, 2:n_agp]), 2, frm_mci, digit = 2)),
+      RR_uni = c("reference", apply(exp(extract(fitted_age_cov, pars = c("lrr_cs_sn"))[[1]][, 2:n_agp]), 2, frm_mci, digit = 2)),
       RR_multi = c("reference", apply(exp(extract(fitted_full, c("lrr_cs_sn"))[[1]][, 2:n_agp]), 2, frm_mci, digit = 2))
     )
   } else {
     tab_age <- data.table::data.table(
       Variable = "Age",
-      Value = dataset$prv$Agp, 
+      Value = ds_age$prv$Agp, 
       Duration = apply(ext$dur_sn * 12, 2, frm_mci),
       Rate = apply(ext$r_det_sn, 2, frm_mci, digit = 2),
-      RR_uni = c("reference", frm_mci(exp(extract(fitted3, pars = c("lrr_cs_sn"))[[1]][, 2]), digit = 2)),
+      RR_uni = c("reference", frm_mci(exp(extract(fitted_age_cov, pars = c("lrr_cs_sn"))[[1]][, 2]), digit = 2)),
       RR_multi = c("reference", frm_mci(exp(extract(fitted_full, c("lrr_cs_sn"))[[1]][, 2]), digit = 2))
     )
   }
   
-  
-  load(file = "out/Full/" + sub + "/HIV.rdata")
-  
-  ext <- extract(fitted1, pars = c("r_det_sn", "dur_sn"))
-  exo <- dataset$exo
+  ext <- extract(fitted_hiv, pars = c("r_det_sn", "dur_sn"))
+  exo <- ds_hiv$exo
   
   tab_hiv <- data.table::data.table(
     Variable = "HIV",
-    Value = rev(dataset$prv$HIV), 
+    Value = rev(ds_hiv$prv$HIV), 
     Duration = rev(apply(ext$dur_sn * 12, 2, frm_mci)),
     Rate = rev(apply(ext$r_det_sn, 2, frm_mci, digit = 2)),
-    RR_uni = c("reference", frm_mci(1/exp(extract(fitted3, pars = c("lrr_cs_sn"))[[1]][, 2]), digit = 2)),
+    RR_uni = c("reference", frm_mci(1/exp(extract(fitted_hiv_cov, pars = c("lrr_cs_sn"))[[1]][, 2]), digit = 2)),
     RR_multi = c("reference", frm_mci(exp(extract(fitted_full, c("lrr_cs_sn"))[[1]][, n_agp + 1]), digit = 2))
   )
   tab_hiv
   
   
-  load(file = "out/Full/" + sub + "/Total.rdata")
-  ext <- extract(fitted3, pars = c("r_det_sn", "dur_sn"))
+  ext <- extract(fitted_total, pars = c("r_det_sn", "dur_sn"))
   
   
   tab_overall <- data.table::data.table(
@@ -185,7 +166,6 @@ fetch_dur_sn <- function(sub) {
   )
   
   rbind(tab_overall, tab_sex, tab_age, tab_hiv)
-  
 }
 
 
@@ -197,73 +177,64 @@ fetch_dur_sp <- function(sub) {
             format(quantile(ds, 0.975, na.rm = T), nsmall = digits, digits = digits))
   }
   
-  
   sub <- glue::as_glue(sub)
   
-  load(file = "out/Full/" + sub +"/Cov.rdata")
+  load(file = "out/Full/" + sub +"/All.rdata")
   
-  load(file = "out/Full/" + sub +"/Sex.rdata")
-  
-  ext <- extract(fitted1, pars = c("r_det_sp", "dur_sp"))
-  exo <- dataset$exo
+  ext <- extract(fitted_sex, pars = c("r_det_sp", "dur_sp"))
+  exo <- ds_sex$exo
   
   
   tab_sex <- data.table::data.table(
     Variable = "Sex",
-    Value = dataset$prv$Sex, 
+    Value = ds_sex$prv$Sex, 
     Duration = apply(ext$dur_sp * 12, 2, frm_mci),
     Rate = apply(ext$r_det_sp, 2, frm_mci, digit = 2),
-    RR_uni = c("reference", frm_mci(exp(extract(fitted3, pars = c("lrr_cs_sp"))[[1]][, 2]), digit = 2)),
+    RR_uni = c("reference", frm_mci(exp(extract(fitted_sex_cov, pars = c("lrr_cs_sp"))[[1]][, 2]), digit = 2)),
     RR_multi = c("reference", frm_mci(exp(extract(fitted_full, c("lrr_cs_sp"))[[1]][, 1]), digit = 2))
   )
   tab_sex
   
   
-  load(file = "out/Full/" + sub +"/Age.rdata")
+  ext <- extract(fitted_age, pars = c("r_det_sp", "dur_sp"))
+  exo <- ds_age$exo
   
-  ext <- extract(fitted1, pars = c("r_det_sp", "dur_sp"))
-  exo <- dataset$exo
-  
-  n_agp <- length(unique(dataset$prv$Agp))
+  n_agp <- length(unique(ds_age$prv$Agp))
   if (n_agp > 2) {
     tab_age <- data.table::data.table(
       Variable = "Age",
-      Value = dataset$prv$Agp, 
+      Value = ds_age$prv$Agp, 
       Duration = apply(ext$dur_sp * 12, 2, frm_mci),
       Rate = apply(ext$r_det_sp, 2, frm_mci, digit = 2),
-      RR_uni = c("reference", apply(exp(extract(fitted3, pars = c("lrr_cs_sp"))[[1]][, 2:n_agp]), 2, frm_mci, digit = 2)),
+      RR_uni = c("reference", apply(exp(extract(fitted_age_cov, pars = c("lrr_cs_sp"))[[1]][, 2:n_agp]), 2, frm_mci, digit = 2)),
       RR_multi = c("reference", apply(exp(extract(fitted_full, c("lrr_cs_sp"))[[1]][, 2:n_agp]), 2, frm_mci, digit = 2))
     )
   } else {
     tab_age <- data.table::data.table(
       Variable = "Age",
-      Value = dataset$prv$Agp, 
+      Value = ds_age$prv$Agp, 
       Duration = apply(ext$dur_sp * 12, 2, frm_mci),
       Rate = apply(ext$r_det_sp, 2, frm_mci, digit = 2),
-      RR_uni = c("reference", frm_mci(exp(extract(fitted3, pars = c("lrr_cs_sp"))[[1]][, 2]), digit = 2)),
+      RR_uni = c("reference", frm_mci(exp(extract(fitted_age_cov, pars = c("lrr_cs_sp"))[[1]][, 2]), digit = 2)),
       RR_multi = c("reference", frm_mci(exp(extract(fitted_full, c("lrr_cs_sp"))[[1]][, 2]), digit = 2))
     )
   }
   
-  
-  load(file = "out/Full/" + sub + "/HIV.rdata")
-  
-  ext <- extract(fitted1, pars = c("r_det_sp", "dur_sp"))
-  exo <- dataset$exo
+  ext <- extract(fitted_hiv, pars = c("r_det_sp", "dur_sp"))
+  exo <- ds_hiv$exo
   
   tab_hiv <- data.table::data.table(
     Variable = "HIV",
-    Value = rev(dataset$prv$HIV), 
+    Value = rev(ds_hiv$prv$HIV), 
     Duration = rev(apply(ext$dur_sp * 12, 2, frm_mci)),
     Rate = rev(apply(ext$r_det_sp, 2, frm_mci, digit = 2)),
-    RR_uni = c("reference", frm_mci(1/exp(extract(fitted3, pars = c("lrr_cs_sp"))[[1]][, 2]), digit = 2)),
+    RR_uni = c("reference", frm_mci(1/exp(extract(fitted_hiv_cov, pars = c("lrr_cs_sp"))[[1]][, 2]), digit = 2)),
     RR_multi = c("reference", frm_mci(exp(extract(fitted_full, c("lrr_cs_sp"))[[1]][, n_agp + 1]), digit = 2))
   )
   tab_hiv
   
   
-  load(file = "out/Full/" + sub + "/Total.rdata")
-  ext <- extract(fitted3, pars = c("r_det_sp", "dur_sp"))
+  ext <- extract(fitted_total, pars = c("r_det_sp", "dur_sp"))
   
   
   tab_overall <- data.table::data.table(
@@ -276,7 +247,6 @@ fetch_dur_sp <- function(sub) {
   )
   
   rbind(tab_overall, tab_sex, tab_age, tab_hiv)
-  
 }
 
 
