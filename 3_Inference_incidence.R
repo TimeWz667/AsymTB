@@ -21,7 +21,7 @@ incs <- list()
 
 
 for (i in 1:length(countries)) {
-  iso <- names(countries)[i]
+  iso <- glue::as_glue(names(countries)[i])
   country <- countries[i]
   
   ### Load data ----
@@ -32,14 +32,15 @@ for (i in 1:length(countries)) {
   wts <- wts[, , dat_as$n_t] * matrix(dat_as$Pop[, dat_as$n_t], dim(wts)[1], 2, byrow = T)
   wts <- wts / rowSums(wts)
 
+  notification <- notification %>% mutate(ISO = iso, Country = country)
   dat_inc <- incidence %>% 
     left_join(rbind(
       notification %>%
-        filter(Year == 2018) %>%
-        group_by(Year) %>%
+        filter(Year == 2019) %>%
+        group_by(Country, ISO, Year) %>%
         summarise(Pop = sum(Pop), Sex = "Total"),
       notification %>%
-        filter(Year == 2018) %>%
+        filter(Year == 2019) %>%
         select(Year, Pop, Sex)
     )) %>%
     mutate(m = m / Pop, u = u / Pop, l = l / Pop, Index = "WHO") %>%
@@ -74,7 +75,7 @@ for (i in 1:length(countries)) {
   inc <- rbind(fore_inc, dat_inc)
   inc$Country <- country
 
-  save(inc, file = paste0("out/Incidence_", iso, ".rdata"))
+  save(inc, file = "out/Incidence_" + iso + ".rdata")
 
   incs[[i]] <- inc  
 }

@@ -17,6 +17,7 @@ countries <- c(
 
 
 countries_cs <- c(
+  KEN = "Kenya",
   MWI = "Malawi", 
   PHL = "Philippines", 
   TZA = "United Republic of Tanzania", 
@@ -168,11 +169,12 @@ for (i in 1:length(countries)) {
   Dur_sim <- with(extract(fitted_as_uni, pars = c("nr", "prv", "pr_s", "dur_s")), {
     
     ti <- dat_as$Years == dat_as$YearSurveyed
+    ti <- ifelse(any(ti), which(ti), 1)
     
-    prev1 <- rowSums(prv[, , dat_as$Years == dat_as$YearSurveyed] * wts)
-    prev2 <- rowSums(prv[, , dat_as$Years == dat_as$YearSurveyed] * wts * pr_s)
+    prev1 <- rowSums(prv[, , ti] * wts)
+    prev2 <- rowSums(prv[, , ti] * wts * pr_s)
     
-    noti <- rowSums(nr[, , dat_as$Years == dat_as$YearSurveyed] * wts)
+    noti <- rowSums(nr[, , ti] * wts)
     
     data.table::data.table(
       Country = country,

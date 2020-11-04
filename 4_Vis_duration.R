@@ -25,6 +25,7 @@ countries <- c(
 
 
 countries_cs <- c(
+  KEN = "Kenya",
   MWI = "Malawi", 
   PHL = "Philippines", 
   TZA = "United Republic of Tanzania", 
@@ -131,6 +132,15 @@ gs$g_Asym_Sex <- TTE_all %>%
   facet_grid(.~Sex) +
   theme(legend.position = "bottom", panel.grid.minor.x = element_blank()) +
   expand_limits(x = 0)
+
+
+gs$g_Dur_Dur <- TTE_all %>%
+  filter(Sex != "Total") %>%
+  ggplot(aes(x = DA * 12, y = DT * 12)) +
+  geom_point(aes(colour = Country), alpha = 0.1) +
+  scale_y_discrete("TB-detectable to notification, month", breaks = c(0, 4, 8, 12, 16, 24, 36)) +
+  scale_x_continuous("TB-detectable to symptomatic onset, month", breaks = c(0, 4, 8, 12, 16, 24, 36)) + 
+  facet_grid(.~Sex) 
 
 
 save(gs, file = "out/g_TTE_All.rdata")

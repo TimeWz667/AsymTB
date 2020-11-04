@@ -23,6 +23,7 @@ countries <- c(
 )
 
 countries_cs <- c(
+  KEN = "Kenya",
   MWI = "Malawi", 
   PHL = "Philippines", 
   TZA = "United Republic of Tanzania", 
@@ -80,11 +81,11 @@ labels_co_as = c(complete = "Treatment complete",
 
 
 for (i in 1:length(countries)) {
-  iso <- names(countries)[i]
+  iso <- glue::as_glue(names(countries)[i])
   country <- countries[i]
   
   ### Load data ----
-  load(paste0("out/Cascade_", iso, ".rdata"))
+  load("out/Cascade_" + iso + ".rdata")
 
   gs <- list()
   
@@ -144,11 +145,11 @@ for (i in 1:length(countries)) {
     theme(legend.position = "none") +
     labs(title = country)
 
-  save(gs, file = paste0("out/g_Cascade_", iso, ".rdata"))
+  save(gs, file = "out/g_Cascade_" + iso + ".rdata")
   
-  ggsave(plot = gs$g_Cohort_Sex, paste0("docs/figs/Cascade/CohortSex_", iso, ext), width = 7.5, height = 7.5)
-  ggsave(plot = gs$g_Cohort_Total, paste0("docs/figs/Cascade/Cohort_", iso, ext), width = 7.5, height = 4.5)
-  ggsave(plot = gs$g_Cascade, paste0("docs/figs/Cascade/Cascade_", iso, ext), width = 6.5, height = 4.5)
+  ggsave(plot = gs$g_Cohort_Sex, "docs/figs/Cascade/CohortSex_" + iso + ext, width = 7.5, height = 7.5)
+  ggsave(plot = gs$g_Cohort_Total, "docs/figs/Cascade/Cohort_" + iso + ext, width = 7.5, height = 4.5)
+  ggsave(plot = gs$g_Cascade, "docs/figs/Cascade/Cascade_" + iso + ext, width = 6.5, height = 4.5)
 }
 
 

@@ -1,45 +1,69 @@
+rm(list = ls())
+
+library(rstan)
 
 
 get_transition_matrix <- function(post) {
-  
-  exo <- post$Total$Exo
-  trmat <- array(0, c(6, 6, length(post_a_sn_sp$Total$MC$r_sym)))
-  
-  for (i in 1:length(post_a_sn_sp$Total$MC$r_sym)) {
-  
-    pars <- c(exo, lapply(post_a_sn_sp$Total$MC, function(p) p[i]))
-    pars
-  
-  
-
-  
-    trmat[, , i] <- with(pars, {
-      mat <- rbind(
-        c(0, r_sym * (1 - p_sp), r_sym * p_sp, r_sc, 0, 0),
-        c(0, 0, r_tr, r_sc, r_death_sn, 1/del_sn),
-        c(0, 0, 0, r_sc, r_death_sp, 1/del_sp),
-        c(0, 0, 0, 1, 0, 0),
-        c(0, 0, 0, 0, 1, 0),
-        c(0, 0, 0, 0, 0, 1)
-      )
-      mat / rowSums(mat)
-    })
-  
+  mci <- function(xs) {
+    c(
+      m = mean(xs),
+      l = quantile(xs, 0.025),
+      u = quantile(xs, 0.975)
+    )
   }
   
-  
-  apply(trmat, c(1, 2), mean)
-
+  pars <- extract(post, c("p_sp", "r_tr", "r_det_sn", "r_det_sp", "r_sym", 
+                          "r_sc", "ra", "rn", "rp"))
+    
+  res <- data.table::rbindlist(list(
+    data.table::data.table(
+      From = "A",
+      To = c("Sn", "Sp", "SC", "Death"),
+      with(pars, {
+        temp <- cbind((1 - p_sp) * r_sym, p_sp * r_sym, r_sc, ra - r_sc)
+        temp <- temp / rowSums(temp)
+        temp <- t(apply(temp, 2, mci))
+        colnames(temp) <- c("m", "l", "u")
+        temp
+      })
+    ),
+    data.table::data.table(
+      From = "Sn",
+      To = c("Sp", "SC", "Death", "Notification"),
+      with(pars, {
+        temp <- cbind(r_tr, r_sc, rn - r_sc, r_det_sn)
+        temp <- temp / rowSums(temp)
+        temp <- t(apply(temp, 2, mci))
+        colnames(temp) <- c("m", "l", "u")
+        temp
+      })
+    ),
+    data.table::data.table(
+      From = "Sp",
+      To = c("SC", "Death", "Notification"),
+      with(pars, {
+        temp <- cbind(r_sc, rp - r_sc, r_det_sp)
+        temp <- temp / rowSums(temp)
+        temp <- t(apply(temp, 2, mci))
+        colnames(temp) <- c("m", "l", "u")
+        temp
+      })
+    )
+  ))
+  res$To <- factor(res$To, levels = c("Sn", "Sp", "Notification", "SC", "Death"))
+  res$From <- factor(res$From, levels = c("A", "Sn", "Sp"))
+  res
 }
 
 
-load("output/Post_Kenya.rdata")
+load("out/Full/KEN/Total.rdata")
 
-get_transition_matrix(post_a_sn_sp)
-
-
-load("output/Post_Blantyre.rdata")
-
-get_transition_matrix(post_a_sn_sp)
+trmap_ken <- get_transition_matrix(fitted_total)
 
 
+load("out/Full/BLT/Total.rdata")
+
+trmap_blt <- get_transition_matrix(fitted_total)
+
+
+save(trmap_blt, trmap_ken, file = "out/TransMap.rdata")

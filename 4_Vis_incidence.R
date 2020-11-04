@@ -71,7 +71,7 @@ g_Inc <- incs %>%
   scale_colour_discrete("", labels = c(A = "Est. Asymptomatic TB", S = "Est. Symptomatic TB", WHO = "WHO estimates")) +
   facet_grid(.~Country, labeller = labeller(Country = countries_iso)) +
   expand_limits(y = 0) +
-  theme(legend.position = "bottom", axis.text.x = element_blank())
+  theme(legend.position = "bottom", axis.text.x = element_blank(), axis.ticks.x = element_blank())
 
 save(g_Inc, file = paste0("out/g_Incidence_All", ext))
 ggsave(plot = g_Inc, paste0("docs/figs/incidence/Inc_All", ext), width = 7.5, height = 5.0)

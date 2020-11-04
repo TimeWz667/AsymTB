@@ -1,0 +1,165 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Kenya (KEN)},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+
+\title{Kenya (KEN)}
+\author{}
+\date{\vspace{-2.5em}}
+
+\begin{document}
+\maketitle
+
+{
+\setcounter{tocdepth}{2}
+\tableofcontents
+}
+\hypertarget{data-and-model-fitting}{%
+\section{Data and model fitting}\label{data-and-model-fitting}}
+
+\hypertarget{tb-case-notification-data-from-who}{%
+\subsection{TB case notification data from
+WHO}\label{tb-case-notification-data-from-who}}
+
+\includegraphics[width=0.9\linewidth]{Profile_KEN_files/figure-latex/unnamed-chunk-1-1}
+
+\hypertarget{tb-prevalence-survey-data}{%
+\subsection{TB prevalence survey data}\label{tb-prevalence-survey-data}}
+
+\includegraphics[width=0.9\linewidth]{Profile_KEN_files/figure-latex/unnamed-chunk-2-1}
+
+\newpage
+
+\hypertarget{duration-time-to-each-state}{%
+\section{Duration / Time to each
+state}\label{duration-time-to-each-state}}
+
+\hypertarget{time-to-state-mearsures-the-time-between-detectable-tb-to-a-specific-state}{%
+\paragraph{Time to state mearsures the time between detectable TB to a
+specific
+state}\label{time-to-state-mearsures-the-time-between-detectable-tb-to-a-specific-state}}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{TB-detectable}: can be found by diagnostic tools used in TB
+  prevalence surveys
+\item
+  \textbf{Symptom onset}: presence of TB-like symptoms
+\item
+  \textbf{Care-seeking intention}: having care-seeking intentions
+\item
+  \textbf{Notification}: being detected / notified
+\end{itemize}
+
+\hypertarget{time-to-each-state}{%
+\subsection{Time to each state}\label{time-to-each-state}}
+
+\includegraphics[width=0.9\linewidth]{Profile_KEN_files/figure-latex/unnamed-chunk-3-1}
+
+\newpage
+
+\hypertarget{healthcare-cascade}{%
+\section{Healthcare cascade}\label{healthcare-cascade}}
+
+\hypertarget{cascade-can-be-defined-by-the-proportion-to-the-next-stage}{%
+\paragraph{Cascade can be defined by the proportion to the next
+stage}\label{cascade-can-be-defined-by-the-proportion-to-the-next-stage}}
+
+Dropouts can attributed to self-cure, background deaths, and untreated
+deaths
+
+\hypertarget{cascade-can-consider-the-time-spent-in-each-state}{%
+\paragraph{Cascade can consider the time-spent in each
+state}\label{cascade-can-consider-the-time-spent-in-each-state}}
+
+Longer duration in a state might related to a higher chance of dropout
+in care-seeking pathways.
+
+\hypertarget{proportions}{%
+\subsection{Proportions}\label{proportions}}
+
+\includegraphics[width=0.9\linewidth]{Profile_KEN_files/figure-latex/unnamed-chunk-4-1}
+
+\hypertarget{time-spent}{%
+\subsection{Time-spent}\label{time-spent}}
+
+\includegraphics[width=0.9\linewidth]{Profile_KEN_files/figure-latex/unnamed-chunk-5-1}
+
+\hypertarget{time-spent-by-sex}{%
+\subsection{Time-spent by sex}\label{time-spent-by-sex}}
+
+\includegraphics[width=0.9\linewidth]{Profile_KEN_files/figure-latex/unnamed-chunk-6-1}
+
+\newpage
+
+\hypertarget{incidence-estimates}{%
+\section{Incidence estimates}\label{incidence-estimates}}
+
+\hypertarget{tb-incidence-considering-asymptomatic-phase}{%
+\subsection{TB Incidence considering asymptomatic
+phase}\label{tb-incidence-considering-asymptomatic-phase}}
+
+\begin{verbatim}
+## Warning: Removed 2 rows containing missing values (geom_pointrange).
+\end{verbatim}
+
+\includegraphics[width=0.9\linewidth]{Profile_KEN_files/figure-latex/unnamed-chunk-7-1}
+
+\end{document}

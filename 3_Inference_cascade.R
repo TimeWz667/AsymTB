@@ -33,6 +33,7 @@ countries <- c(
 )
 
 countries_cs <- c(
+  KEN = "Kenya",
   MWI = "Malawi", 
   PHL = "Philippines", 
   TZA = "United Republic of Tanzania", 
@@ -45,12 +46,12 @@ countries_cs <- c(
 
 
 for (i in 1:length(countries)) {
-  iso <- names(countries)[i]
+  iso <- glue::as_glue(names(countries)[i])
   country <- countries[i]
   
   ### Load data ----
-  load(paste0("out/ASC/Post_", iso, ".rdata"))
-  load(paste0("data/TO_", iso, ".rdata"))
+  load("out/ASC/Post_" + iso + ".rdata")
+  load("data/TO_" + iso + ".rdata")
   
   if (country %in% countries_cs) {
     wts <- extract(fitted_asc_uni, pars = "inc_a")$inc_a
@@ -277,7 +278,7 @@ for (i in 1:length(countries)) {
       mutate(Stage = factor(Stage, levels = c("sym", "aware", "care", "complete")))
   }
   
-  save(Cascade, Cohort, file = paste0("out/Cascade_", iso, ".rdata"))
+  save(Cascade, Cohort, file = "out/Cascade_" + iso + ".rdata")
 }
 
 

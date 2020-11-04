@@ -23,12 +23,12 @@ n_sel <- 300
 #### 
 
 for (i in 1:length(countries)) {
-  iso <- names(countries)[i]
+  iso <- glue::as_glue(names(countries)[i])
   country <- countries[i]
   
   ### Load data ----
-  load(paste0("data/Input_", iso, ".rdata"))
-  load(paste0("out/ASC/Post_", iso, ".rdata"))
+  load("data/Input_" + iso + ".rdata")
+  load("out/ASC/Post_" + iso + ".rdata")
   
   
   ### Transform data ----
@@ -56,35 +56,24 @@ for (i in 1:length(countries)) {
       summarise(value = sum(n_all) / sum(Pop), Sex = "Total", Index = "CNR") %>%
       select(Year, Sex, Index, value)
   )
-
   
-  fore_cnr <- local({
-    noti <- as.table(extract(fitted_as_uni, c("noti"))$noti[1:n_sel, , ])
-    dimnames(noti)[[1]] <- 1:n_sel
-    dimnames(noti)[[2]] <- c("Female", "Male")
-    dimnames(noti)[[3]] <- dat_as$Years
-    noti <- data.frame(noti)
+  
+  fore <- local({
+    tt <- 2010:2019 - dat_as$YearSurveyed
     
-    colnames(noti) <- c("Sim", "Sex", "Year", "value")
-    noti$Year <- as.numeric(as.character(noti$Year))
-    
-    noti
-  })
+    ext <- extract(fitted_as_uni, c("prv_a", "prv_s", "adr", "r_det"))
   
-  
-  fore_prv <- local({
-    tt <- 2010:2018 - dat_as$YearSurveyed
-    
-    ext <- extract(fitted_as_uni, c("prv_a", "prv_s", "adr"))
-  
-    data.table::rbindlist(lapply(2010:2018, function(t) {
+    data.table::rbindlist(lapply(2010:2019, function(t) {
       prv_s <- exp(- ext$adr * (t - dat_as$YearSurveyed)) * ext$prv_s
       prv_a <- exp(- ext$adr * (t - dat_as$YearSurveyed)) * ext$prv_a
-
+      cnr <- prv_s * ext$r_det
+      
       prv_s <- as.table(prv_s[1:n_sel, ])
       prv_a <- as.table(prv_a[1:n_sel, ])
-      dimnames(prv_s)[[1]] <- dimnames(prv_a)[[1]] <- 1:n_sel
-      dimnames(prv_s)[[2]] <- dimnames(prv_a)[[2]] <- c("Female", "Male")
+      cnr <- as.table(cnr[1:n_sel, ])
+      dimnames(prv_s)[[1]] <- dimnames(prv_a)[[1]] <- dimnames(cnr)[[1]] <- 1:n_sel
+      dimnames(prv_s)[[2]] <- dimnames(prv_a)[[2]] <- dimnames(cnr)[[2]] <- c("Female", "Male")
+      
       
       prv_s <- data.frame(prv_s)
       colnames(prv_s) <- c("Sim", "Sex", "value")
@@ -96,7 +85,13 @@ for (i in 1:length(countries)) {
       prv_a$Year = t
       prv_a$Stage <- "A"
       
-      rbind(prv_a, prv_s)
+      
+      cnr <- data.frame(cnr)
+      colnames(cnr) <- c("Sim", "Sex", "value")
+      cnr$Year = t
+      cnr$Stage <- "N"
+      
+      rbind(prv_a, prv_s, cnr)
     }))
     
   })  
@@ -104,7 +99,7 @@ for (i in 1:length(countries)) {
   
   gs <- list()
   
-  gs$g_CNR <- ggplot(fore_cnr) +
+  gs$g_CNR <- ggplot(fore %>% filter(Stage == "N")) +
     geom_line(aes(x = Year, y = value, group = Sim), alpha = 0.2, colour = "pink") +
     geom_point(data = dat_cnr %>% filter(Sex != "Total"), aes(x = Year, y = value)) +
     scale_y_continuous("Case notification rate, per 100 000", labels = function(x) x * 1E5) +
@@ -113,7 +108,7 @@ for (i in 1:length(countries)) {
     expand_limits(y = 0, x = 2010)
   
   
-  gs$g_Prv <- ggplot(fore_prv) +
+  gs$g_Prv <- ggplot(fore %>% filter(Stage != "N")) +
     geom_line(aes(x = Year, y = value, group = Sim), alpha = 0.2, colour = "pink") +
     geom_point(data = dat_prv %>% filter(Sex != "Total"), aes(x = Year, y = value)) +
     scale_y_continuous("Prevalence, per 100 000", labels = function(x) x * 1E5) +
@@ -122,15 +117,8 @@ for (i in 1:length(countries)) {
     expand_limits(y = 0, x = 2010)
 
   
-  save(gs, file = paste0("out/g_Fitted_", iso, ".rdata"))
+  save(gs, file = "out/g_Fitted_" + iso + ".rdata")
   
-  ggsave(plot = gs$g_CNR, paste0("docs/figs/fit/CNR_", iso, ext), width = 6.5, height = 3.5)
-  ggsave(plot = gs$g_Prv, paste0("docs/figs/fit/Prv_", iso, ext), width = 6.5, height = 5.5)
+  ggsave(plot = gs$g_CNR, "docs/figs/fit/CNR_" + iso + ext, width = 6.5, height = 3.5)
+  ggsave(plot = gs$g_Prv, "docs/figs/fit/Prv_" + iso + ext, width = 6.5, height = 5.5)
 }
-
-
-
-
-
-
-
