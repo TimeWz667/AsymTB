@@ -48,7 +48,7 @@ g <- ggplot(res, aes(x = DurAsym, y = PrSp, z = SpSn)) +
   scale_x_continuous("Duration of asymptomatic phase, year") +
   facet_grid(.~Conversion)
 
-ggsave("output/Sym2Asym.jpg", plot = g, width = 7, height = 4)
+ggsave("out/Sym2Asym.jpg", plot = g, width = 7, height = 4)
 
 
 ggplot(res, aes(x = DurAsym, y = PrSp, z = ErrDelaySn)) + 
