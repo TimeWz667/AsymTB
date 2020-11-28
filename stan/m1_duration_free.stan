@@ -94,7 +94,7 @@ transformed parameters {
 }
 model {
   p_sp ~ uniform(0, 1);
-  r_tr ~ uniform(0, 0.5);
+  r_tr ~ uniform(0, 2);
   r_sc ~ uniform(r_sc_l, r_sc_u);
 
   prv0 ~ uniform(0, 1);
@@ -123,6 +123,10 @@ generated quantities {
   real dur_a[n_gp];
   real dur_sn[n_gp];
   real dur_sp[n_gp];
+  
+  matrix<lower=0>[n_gp, n_t] inc_a;
+  matrix<lower=0>[n_gp, n_t] inc_s;
+  
 
   for (j in 1:n_gp) {
     // prevalence to prevalence survey data
@@ -134,6 +138,9 @@ generated quantities {
     for (i in 1:n_t) {
       log_lik_noti[i, 1, j] = poisson_lpmf(NotiSn[j, i] | nr_sn[j, i] * Pop[j, i]);
       log_lik_noti[i, 2, j] = poisson_lpmf(NotiSp[j, i] | nr_sp[j, i] * Pop[j, i]);
+      
+      inc_a[j, i] = (ra[j] * pr_a[j] + (rp[j] + r_det_sp[j]) * pr_sp[j] + (rn[j] + r_det_sn[j]) * pr_sn[j] - adr[j]) * prv[j, i];
+      inc_s[j, i] = r_sym[j] * pr_a[j] * prv[j, i];
     }
     
     dur_a[j] = 1 / (ra[j] + r_sym[j]);

@@ -118,7 +118,7 @@ transformed parameters {
 }
 model {
   p_sp ~ uniform(0, 1);
-  r_tr ~ uniform(0, 0.5);
+  r_tr ~ uniform(0, 2);
   r_sc ~ uniform(r_sc_l, r_sc_u);
 
   prv0 ~ uniform(0, 1);
