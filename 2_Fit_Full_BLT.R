@@ -115,7 +115,7 @@ model <- readRDS(file = "stan/m1_duration_free.rds")
 fitted_age <- sampling(model, data = c(dat, exo), iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
 check_divergences(fitted_age)
 summary(fitted_age, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr"))$summary
-
+summary(fitted_age, pars = c("dur_a", "Delay_Sn", "Delay_Sp"))$summary
 
 model <- readRDS(file = "stan/m1_reg.rds")
 fitted_age_cov <- sampling(model, data = c(dat, exo), iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)

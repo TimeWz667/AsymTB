@@ -26,12 +26,12 @@ Tab_Dur <-
   Durations$Durations_All %>%
   group_by(Country, ISO) %>%
   summarise(PN_All = frm_mci(PN_All, 1),
-            Delay_All = frm_mci(DelayA, 1),
+            Delay_All = frm_mci(DelayA * 12, 1),
             CDR_All = frm_pci(CDR_A),
             Inc_All = frm_mci(IncR_All * 1E5, 0),
             
             PN_Sym = frm_mci(PN_S, 1),
-            Delay_Sym = frm_mci(DelayS, 1),
+            Delay_Sym = frm_mci(DelayS * 12, 1),
             CDR_Sym = frm_pci(CDR_S),
             Inc_Sym = frm_mci(IncR_S * 1E5, 0),
             ) %>%

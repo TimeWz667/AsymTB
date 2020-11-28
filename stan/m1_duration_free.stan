@@ -124,8 +124,21 @@ generated quantities {
   real dur_sn[n_gp];
   real dur_sp[n_gp];
   
-  matrix<lower=0>[n_gp, n_t] inc_a;
-  matrix<lower=0>[n_gp, n_t] inc_s;
+  real<lower=0> IncN_A[n_gp];
+  real<lower=0> IncN_S[n_gp];
+  real<lower=0> NotiN_Sn[n_gp];
+  real<lower=0> NotiN_Sp[n_gp];
+  real<lower=0> PrvN_A[n_gp];
+  real<lower=0> PrvN_Sn[n_gp];
+  real<lower=0> PrvN_Sp[n_gp];
+  real<lower=0> CDR_A[n_gp];
+  real<lower=0> CDR_S[n_gp];
+  real<lower=0> CDR_Sp[n_gp];
+  real<lower=0> Gap_A[n_gp];
+  real<lower=0> Gap_S[n_gp];
+  real<lower=0> Gap_Sp[n_gp];
+  real<lower=0> Delay_Sn[n_gp];
+  real<lower=0> Delay_Sp[n_gp];
   
 
   for (j in 1:n_gp) {
@@ -138,13 +151,32 @@ generated quantities {
     for (i in 1:n_t) {
       log_lik_noti[i, 1, j] = poisson_lpmf(NotiSn[j, i] | nr_sn[j, i] * Pop[j, i]);
       log_lik_noti[i, 2, j] = poisson_lpmf(NotiSp[j, i] | nr_sp[j, i] * Pop[j, i]);
-      
-      inc_a[j, i] = (ra[j] * pr_a[j] + (rp[j] + r_det_sp[j]) * pr_sp[j] + (rn[j] + r_det_sn[j]) * pr_sn[j] - adr[j]) * prv[j, i];
-      inc_s[j, i] = r_sym[j] * pr_a[j] * prv[j, i];
     }
+
+    
+    NotiN_Sn[j] = nr_sn[j, n_t] * Pop[j, n_t];
+    NotiN_Sp[j] = nr_sp[j, n_t] * Pop[j, n_t];
+    
+    PrvN_A[j] = pr_a[j] * prv[j, n_t] * Pop[j, n_t];
+    PrvN_Sn[j] = pr_sn[j] * prv[j, n_t] * Pop[j, n_t];
+    PrvN_Sp[j] = pr_sp[j] * prv[j, n_t] * Pop[j, n_t];
+    
+    IncN_A[j] = (ra[j] * pr_a[j] + (rp[j] + r_det_sp[j]) * pr_sp[j] + (rn[j] + r_det_sn[j]) * pr_sn[j] - adr[j]) * prv[j, n_t] * Pop[j, n_t];
+    IncN_S[j] = r_sym[j] * pr_a[j] * prv[j, n_t] * Pop[j, n_t];
+    
+    CDR_A[j] = (NotiN_Sp[j] + NotiN_Sn[j]) / IncN_A[j];
+    CDR_S[j] = (NotiN_Sp[j] + NotiN_Sn[j]) / IncN_S[j];
+    CDR_Sp[j] = NotiN_Sp[j] / (IncN_S[j] * p_sp);
     
     dur_a[j] = 1 / (ra[j] + r_sym[j]);
     dur_sn[j] = 1 / (rn[j] + r_tr + r_det_sn[j]);
     dur_sp[j] = 1 / (rp[j] + r_det_sp[j]);
+    Delay_Sp[j] = dur_sp[j];
+    Delay_Sn[j] = dur_sn[j] + p_sp * dur_sp[j];
+    
+    Gap_A[j] = r_sym[j] * dur_a[j];
+    Gap_Sp[j] = r_det_sp[j] * dur_sp[j];
+    Gap_S[j] = ((1 - p_sp) * (r_det_sn[j] + r_tr) * dur_sn[j] + p_sp) * Gap_Sp[j];
+    
   }
 }
