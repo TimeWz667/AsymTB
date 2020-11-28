@@ -3,18 +3,7 @@ library(tidyverse)
 library(rstan)
 
 #### Countries
-countries <- c(
-  KHM = "Cambodia",
-  KEN = "Kenya",
-  LAO = "Lao People's Democratic Republic", 
-  MWI = "Malawi", 
-  PAK = "Pakistan", 
-  PHL = "Philippines", 
-  TZA = "United Republic of Tanzania", 
-  UGA = "Uganda", #
-  VNM = "Viet Nam", 
-  ZMB = "Zambia"
-)
+source("data/country_list.R")
 
 ext <- ".png"
 
@@ -34,7 +23,9 @@ for (i in 1:length(countries)) {
   ### Transform data ----
   dat_prv <- rbind(
     prevalence %>%
-      mutate(Prv_A = Asym / N, Prv_S = Sym / N) %>%
+      group_by(Year, Sex) %>%
+      summarise(Prv_A = sum(Asym) / sum(N), Prv_S = sum(Sym) / sum(N)) %>%
+      #mutate(Prv_A = Asym / N, Prv_S = Sym / N) %>%
       pivot_longer(starts_with("Prv_")) %>%
       separate(name, c("Index", "Stage"), "_") %>%
       select(Year, Sex, Index, Stage, value),
@@ -49,7 +40,8 @@ for (i in 1:length(countries)) {
   
   dat_cnr <- rbind(
     notification %>%
-      mutate(value = n_all / Pop, Index = "CNR") %>%
+      group_by(Year, Sex) %>%
+      summarise(value = sum(n_all) / sum(Pop), Index = "CNR") %>%
       select(Year, Sex, Index, value),
     notification %>%
       group_by(Year) %>%
@@ -103,7 +95,7 @@ for (i in 1:length(countries)) {
     geom_line(aes(x = Year, y = value, group = Sim), alpha = 0.2, colour = "pink") +
     geom_point(data = dat_cnr %>% filter(Sex != "Total"), aes(x = Year, y = value)) +
     scale_y_continuous("Case notification rate, per 100 000", labels = function(x) x * 1E5) +
-    scale_x_continuous("Year") + 
+    scale_x_continuous("Year", breaks = c(2010, 2013, 2016, 2019)) + 
     facet_grid(.~Sex) +
     expand_limits(y = 0, x = 2010)
   
@@ -112,7 +104,7 @@ for (i in 1:length(countries)) {
     geom_line(aes(x = Year, y = value, group = Sim), alpha = 0.2, colour = "pink") +
     geom_point(data = dat_prv %>% filter(Sex != "Total"), aes(x = Year, y = value)) +
     scale_y_continuous("Prevalence, per 100 000", labels = function(x) x * 1E5) +
-    scale_x_continuous("Year") + 
+    scale_x_continuous("Year", breaks = c(2010, 2013, 2016, 2019)) + 
     facet_grid(Stage~Sex, labeller = labeller(Stage = c(A = "Asymptomatic TB", S = "Symptomatic TB"))) +
     expand_limits(y = 0, x = 2010)
 

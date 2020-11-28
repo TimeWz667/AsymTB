@@ -19,31 +19,9 @@ n_sim <- 100
 
 
 ### Country list -----
-countries <- c(
-  KHM = "Cambodia",
-  KEN = "Kenya",
-  LAO = "Lao People's Democratic Republic", 
-  MWI = "Malawi", 
-  PAK = "Pakistan", 
-  PHL = "Philippines", 
-  TZA = "United Republic of Tanzania", 
-  UGA = "Uganda", #
-  VNM = "Viet Nam", 
-  ZMB = "Zambia"
-)
+source("data/country_list.R")
 
-countries_cs <- c(
-  KEN = "Kenya",
-  MWI = "Malawi", 
-  PHL = "Philippines", 
-  TZA = "United Republic of Tanzania", 
-  UGA = "Uganda", 
-  ZMB = "Zambia"
-)
-
-
-
-
+Cascade_all <- list()
 
 for (i in 1:length(countries)) {
   iso <- glue::as_glue(names(countries)[i])
@@ -251,7 +229,8 @@ for (i in 1:length(countries)) {
       pivot_longer(starts_with(c("C_", "G_")), values_to = "pr") %>%
       separate(name, c("Index", "Stage", "Stat"), "_") %>%
       pivot_wider(c(Index, Stage), names_from = Stat, values_from = pr) %>%
-      mutate(Stage = factor(Stage, levels = c("sym", "aware", "care", "complete")))
+      mutate(Stage = factor(Stage, levels = c("sym", "aware", "care", "complete")), 
+             ISO = iso, Country = countries_lab[country])
     
     
   } else {
@@ -275,13 +254,16 @@ for (i in 1:length(countries)) {
       pivot_longer(starts_with(c("C_", "G_")), values_to = "pr") %>%
       separate(name, c("Index", "Stage", "Stat"), "_") %>%
       pivot_wider(c(Index, Stage), names_from = Stat, values_from = pr) %>%
-      mutate(Stage = factor(Stage, levels = c("sym", "aware", "care", "complete")))
+      mutate(Stage = factor(Stage, levels = c("sym", "aware", "care", "complete")), 
+             ISO = iso, Country = countries_lab[country])
   }
+  
+  
+  Cascade_all[[i]] <- Cascade
   
   save(Cascade, Cohort, file = "out/Cascade_" + iso + ".rdata")
 }
 
-
-
-
+Cascade <- bind_rows(Cascade_all)
+save(Cascade, file = "out/Cascade_All.rdata")
 

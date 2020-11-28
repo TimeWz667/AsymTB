@@ -5,31 +5,12 @@ library(tidyverse)
 
 theme_set(theme_bw() + theme(text = element_text(family = "sans")))
 
-ext <- ".png"
+ext <- glue::as_glue(".png")
 
 
 ### Country list -----
-countries <- c(
-  KHM = "Cambodia",
-  KEN = "Kenya",
-  LAO = "Lao People's Democratic Republic", 
-  MWI = "Malawi", 
-  PAK = "Pakistan", 
-  PHL = "Philippines", 
-  TZA = "United Republic of Tanzania", 
-  UGA = "Uganda", #
-  VNM = "Viet Nam", 
-  ZMB = "Zambia"
-)
+source("data/country_list.R")
 
-countries_cs <- c(
-  KEN = "Kenya",
-  MWI = "Malawi", 
-  PHL = "Philippines", 
-  TZA = "United Republic of Tanzania", 
-  UGA = "Uganda", 
-  ZMB = "Zambia"
-)
 
 colour_as <- c(Death = "#636363",
                LTFU = "#969696",
@@ -79,6 +60,8 @@ labels_co_as = c(complete = "Treatment complete",
                   sym = "Symptom onset")
 
 
+TSS <- list()
+Ends <- list()
 
 for (i in 1:length(countries)) {
   iso <- glue::as_glue(names(countries)[i])
@@ -120,6 +103,8 @@ for (i in 1:length(countries)) {
     labs(title = country)
   
   end <-  Cohort$End %>% filter(Sex == "Total") %>% mutate(t = 2.2)
+  Ends[[i]] <- end %>% mutate(Country = country)
+  TSS[[i]] <- Cohort$TS %>% filter(Sex == "Total") %>% mutate(Country = country)
   
   gs$g_Cohort_Total <-  Cohort$TS %>% filter(Sex == "Total") %>%
     ggplot() +
@@ -155,3 +140,113 @@ for (i in 1:length(countries)) {
 
 
 
+
+
+
+
+
+load("out/Cascade_All.rdata")
+
+TSS <- bind_rows(TSS)
+Ends <- bind_rows(Ends)
+
+
+dat <- Cascade$Cascade_All %>%
+  group_by(Country, ISO) %>%
+  summarise(across(everything(), list(M = mean, 
+                                    L = ~quantile(., 0.025),
+                                    U = ~quantile(., 0.975)))) %>%
+  pivot_longer(starts_with(c("C_", "G_")), values_to = "pr") %>%
+  separate(name, c("Index", "Stage", "Stat"), "_") %>%
+  select(-Key_M, -Key_L, -Key_U) %>%
+  pivot_wider(c(Country, ISO, Index, Stage), values_from = pr, names_from = Stat) %>%
+  filter(M > 0) %>%
+  mutate(Stage = factor(Stage, levels = c("sym", "aware", "care", "complete")),
+         L = ifelse(Stage == "complete" & Index == "G", NA, L),
+         U = ifelse(Stage == "complete" & Index == "G", NA, U))
+
+
+dat_sex <- Cascade$Cascade_Sex %>%
+  group_by(Country, ISO, Sex) %>%
+  summarise(across(everything(), list(M = mean, 
+                                      L = ~quantile(., 0.025),
+                                      U = ~quantile(., 0.975)))) %>%
+  pivot_longer(starts_with(c("C_", "G_")), values_to = "pr") %>%
+  separate(name, c("Index", "Stage", "Stat"), "_") %>%
+  select(-Key_M, -Key_L, -Key_U) %>%
+  pivot_wider(c(Country, ISO, Sex, Index, Stage), values_from = pr, names_from = Stat) %>%
+  filter(M > 0) %>%
+  mutate(Stage = factor(Stage, levels = c("sym", "aware", "care", "complete")),
+         L = ifelse(Stage == "complete" & Index == "G", NA, L),
+         U = ifelse(Stage == "complete" & Index == "G", NA, U))
+
+
+gs <- list()
+
+gs$g_cohort <- TSS %>%
+  ggplot() +
+  geom_bar(aes(x = t, y = value, fill = name), stat = "identity", width = 0.02) +
+  geom_bar(data = Ends, aes(x = t, y = value, fill = name), stat = "identity", width = 0.1) +
+  scale_x_continuous("Time since TB-detectable, year", breaks = c(0, 0.5, 1, 1.5, 2, 2.2), 
+                     labels = c(0, 0.5, 1, 1.5, 2, "End")) +
+  scale_y_continuous("State Distribution, %", labels = scales::percent) + 
+  scale_fill_manual("Stage",
+                    values = colour_asc,
+                    labels = labels_asc,
+                    guide = guide_legend(reverse = TRUE)) +
+  facet_wrap(.~Country, labeller = labeller(Country = countries_lab)) +
+  theme(legend.position = "bottom")
+
+
+gs$g_cascade <- ggplot(dat %>% filter(Index == "C")) +
+  geom_bar(aes(x = Stage, y = M, fill = Stage), stat = "identity", width = 0.6) +
+  geom_errorbar(aes(x = Stage, ymin = L, ymax = U), width = 0.3) +
+  scale_y_continuous("Proportion (%)", limits = c(0, 1), labels = scales::percent) +
+  scale_x_discrete("", labels = NULL) + 
+  scale_fill_manual("Endpoint",
+                    values = colour_co_asc,
+                    labels = labels_co_asc) +
+  facet_wrap(.~Country, labeller = labeller(Country = countries_lab)) +
+  theme(legend.position = "bottom")
+
+
+gs$g_gaps <- ggplot(dat %>% filter(Index == "G")) +
+  geom_bar(aes(x = Stage, y = M, fill = Stage), stat = "identity", width = 0.6) +
+  geom_errorbar(aes(x = Stage, ymin = L, ymax = U), width = 0.3) +
+  scale_y_continuous("Proportion (%)", limits = c(0, 1), labels = scales::percent) +
+  scale_x_discrete("", labels = NULL) + 
+  scale_fill_manual("Endpoint",
+                    values = colour_co_asc,
+                    labels = labels_co_asc) +
+  facet_wrap(.~Country, labeller = labeller(Country = countries_lab)) +
+  theme(legend.position = "bottom")
+
+gs$g_cascade_sex <- ggplot(dat_sex %>% filter(Index == "C")) +
+  geom_bar(aes(x = Stage, y = M, fill = Stage), stat = "identity", width = 0.6) +
+  geom_errorbar(aes(x = Stage, ymin = L, ymax = U), width = 0.3) +
+  scale_y_continuous("Proportion (%)", limits = c(0, 1), labels = scales::percent) +
+  scale_x_discrete("", labels = NULL) + 
+  scale_fill_manual("Endpoint",
+                    values = colour_co_asc,
+                    labels = labels_co_asc) +
+  facet_grid(Country~Sex) +
+  theme(legend.position = "bottom")
+
+gs$g_gaps_sex <- ggplot(dat_sex %>% filter(Index == "G")) +
+  geom_bar(aes(x = Stage, y = M, fill = Stage), stat = "identity", width = 0.6) +
+  geom_errorbar(aes(x = Stage, ymin = L, ymax = U), width = 0.3) +
+  scale_y_continuous("Proportion (%)", limits = c(0, 1), labels = scales::percent) +
+  scale_x_discrete("", labels = NULL) + 
+  scale_fill_manual("Endpoint",
+                    values = colour_co_asc,
+                    labels = labels_co_asc) +
+  facet_grid(Country~Sex) +
+  theme(legend.position = "bottom")
+
+
+ggsave(plot = gs$g_cascade, "docs/figs/Cascade" + ext, width = 9.5, height = 7.5)
+ggsave(plot = gs$g_gaps, "docs/figs/Gaps" + ext, width = 9.5, height = 7.5)
+ggsave(plot = gs$g_cohort, "docs/figs/Cohort" + ext, width = 9.5, height = 7.5)
+
+ggsave(plot = gs$g_cascade_sex, "docs/figs/cascade/Cascade_Sex" + ext, width = 7.5, height = 15.5)
+ggsave(plot = gs$g_gaps_sex, "docs/figs/cascade/Gaps_Sex" + ext, width = 7.5, height = 15.5)

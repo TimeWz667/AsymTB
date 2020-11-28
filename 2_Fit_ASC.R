@@ -5,6 +5,7 @@ options(mc.cores = min(5, parallel::detectCores()))
 
 
 source("R/get_exo.R")
+source("data/country_list.R")
 
 
 ###
@@ -14,28 +15,6 @@ n_chain = 3
 
 ###
 
-
-countries <- c(
-  KHM = "Cambodia",
-  KEN = "Kenya",
-  LAO = "Lao People's Democratic Republic", 
-  MWI = "Malawi", 
-  PAK = "Pakistan", 
-  PHL = "Philippines", 
-  TZA = "United Republic of Tanzania", 
-  UGA = "Uganda", #
-  VNM = "Viet Nam", 
-  ZMB = "Zambia"
-)
-
-countries_cs <- c(
-  KEN = "Kenya",
-  MWI = "Malawi", 
-  PHL = "Philippines", 
-  TZA = "United Republic of Tanzania", 
-  UGA = "Uganda", #
-  ZMB = "Zambia"
-)
 
 
 
@@ -72,11 +51,9 @@ for (i in 1:length(countries)) {
   
   if (iso == "KHM") {
     noti <- noti %>% filter(Year >= 2014)
-  }
-  if (iso == "UGA") {
+  } else if (iso == "UGA") {
     noti <- noti %>% filter(Year >= 2014)
-  }
-  if (iso == "VNM") {
+  } else if (iso == "VNM") {
     noti <- noti %>% filter(Year >= 2016)
   }
   
@@ -140,10 +117,12 @@ for (i in 1:length(countries)) {
     model <- readRDS(file = "stan/m3_asc_uni.rds")
     fitted_asc_uni <- sampling(model, data = dat_asc, iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
     summary(fitted_asc_uni, pars = c("r_sym", "r_aware", "r_det", "adr", "dur_a", "dur_s", "dur_c"))$summary
+    check_divergences(fitted_asc_uni)
     
     model <- readRDS(file = "stan/m3_asc_fixed.rds")
     fitted_asc_fixed <- sampling(model, data = dat_asc, iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
     summary(fitted_asc_fixed, pars = c("r_sym", "r_aware", "r_det", "adr", "dur_a", "dur_s", "dur_c"))$summary
+    check_divergences(fitted_asc_fixed)
     
     save(fitted_as_uni, fitted_as_fixed, dat_as,
          fitted_asc_uni, fitted_asc_fixed, dat_asc,

@@ -7,18 +7,8 @@ theme_set(theme_bw() + theme(text = element_text(family = "sans")))
 
 
 ### Country list -----
-countries <- c(
-  KHM = "Cambodia",
-  KEN = "Kenya",
-  LAO = "Lao People's Democratic Republic", 
-  MWI = "Malawi", 
-  PAK = "Pakistan", 
-  PHL = "Philippines", 
-  TZA = "United Republic of Tanzania", 
-  UGA = "Uganda", #
-  VNM = "Viet Nam", 
-  ZMB = "Zambia"
-)
+source("data/country_list.R")
+
 
 
 for (i in 1:length(countries)) {
