@@ -172,7 +172,7 @@ generated quantities {
     dur_sn[j] = 1 / (rn[j] + r_tr + r_det_sn[j]);
     dur_sp[j] = 1 / (rp[j] + r_det_sp[j]);
     Delay_Sp[j] = dur_sp[j];
-    Delay_Sn[j] = dur_sn[j] + p_sp * dur_sp[j];
+    Delay_Sn[j] = dur_sn[j] + r_tr * dur_sn[j]  * dur_sp[j];
     
     Gap_A[j] = r_sym[j] * dur_a[j];
     Gap_Sp[j] = r_det_sp[j] * dur_sp[j];

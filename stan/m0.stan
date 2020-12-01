@@ -100,21 +100,54 @@ model {
   }
 }
 generated quantities {
-  vector<lower=0>[n_t] inc_a;
-  vector<lower=0>[n_t] inc_s;
-  vector<lower=0>[n_t] noti;
-  vector<lower=0>[n_t] cdr;
   real dur_a;
   real dur_sn;
   real dur_sp;
 
-  // incidence estimates
-  inc_a = (ra * pr_a + (rn + r_det_sn) * pr_sn + (rp + r_det_sp) * pr_sp - adr) * prv;
-  inc_s = r_sym * pr_a * prv;
-  noti = prv * pr_sn * r_det_sn + prv * pr_sp * r_det_sp;
-  cdr = noti ./ inc_a;
-
+  
+  real<lower=0> IncN_A;
+  real<lower=0> IncN_S;
+  real<lower=0> NotiN_Sn;
+  real<lower=0> NotiN_Sp;
+  real<lower=0> PrvN_A;
+  real<lower=0> PrvN_Sn;
+  real<lower=0> PrvN_Sp;
+  real<lower=0> CDR_A;
+  real<lower=0> CDR_S;
+  real<lower=0> CDR_Sp;
+  real<lower=0> Gap_A;
+  real<lower=0> Gap_S;
+  real<lower=0> Gap_Sp;
+  real<lower=0> Delay_Sn;
+  real<lower=0> Delay_Sp;
+  
+  
   dur_a = 1 / (ra + r_sym);
   dur_sn = 1 / (rn + r_tr + r_det_sn);
   dur_sp = 1 / (rp + r_det_sp);
+
+  NotiN_Sn = nr_sn[n_t] * Pop[n_t];
+  NotiN_Sp = nr_sp[n_t] * Pop[n_t];
+  
+  PrvN_A = pr_a * prv[n_t] * Pop[n_t];
+  PrvN_Sn = pr_sn * prv[n_t] * Pop[n_t];
+  PrvN_Sp = pr_sp * prv[n_t] * Pop[n_t];
+  
+  IncN_A = (ra * pr_a + (rp + r_det_sp) * pr_sp + (rn + r_det_sn) * pr_sn - adr) * prv[n_t] * Pop[n_t];
+  IncN_S = r_sym * pr_a * prv[n_t] * Pop[n_t];
+  
+  CDR_A = (NotiN_Sp + NotiN_Sn) / IncN_A;
+  CDR_S = (NotiN_Sp + NotiN_Sn) / IncN_S;
+  CDR_Sp = NotiN_Sp / (IncN_S * p_sp);
+  
+  dur_a = 1 / (ra + r_sym);
+  dur_sn = 1 / (rn + r_tr + r_det_sn);
+  dur_sp = 1 / (rp + r_det_sp);
+  Delay_Sp = dur_sp;
+  Delay_Sn = dur_sn + r_tr * dur_sn  * dur_sp;
+  
+  Gap_A = r_sym * dur_a;
+  Gap_Sp = r_det_sp * dur_sp;
+  Gap_S = ((1 - p_sp) * (r_det_sn + r_tr) * dur_sn + p_sp) * Gap_Sp;
+
 }
