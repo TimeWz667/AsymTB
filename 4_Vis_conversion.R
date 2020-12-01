@@ -37,10 +37,12 @@ gs$g_cor <- bind_rows(lapply(names(countries), function(iso) {
                      limits = c(0, 1), labels = scales::percent) +
   scale_x_continuous(TeX("Slope of (conversion rate, percentage smear-positive)"), 
                      limits = c(-1, 0)) +
-  scale_size_continuous("Notified cases in 2019", labels = function(x) paste0(x * 1E-6, " million")) +
+  scale_size_continuous("Notified cases, 2019", labels = function(x) paste0(x * 1E-6, " million")) +
   guides(colour = "none") +
   expand_limits(x = c(-1, 0)) +
-  theme(legend.position = c(0.3, 0.2))
+  theme(legend.position = c(0.05, 0.1), legend.direction = "horizontal", 
+        legend.justification = "left", legend.background = element_rect(fill = "grey90"))
+  #theme(legend.position = "bottom")
 
 
 gs$g_tr_sp <- Conversion$Pars %>%
@@ -63,16 +65,18 @@ gs$g_den <- Conversion$Dens %>%
   summarise(z = weighted.mean(z, wt)) %>%
   filter(z > 0.5) %>%
   ggplot() +
-  geom_tile(aes(x, y, fill = -z)) +
+  geom_tile(aes(x, y, fill = z)) +
   scale_y_continuous("Smear-positive at symtomatic onset, %", 
                      limits = c(0, 1), labels = scales::percent) +
   scale_x_continuous("Conversion rate, per year") +
-  scale_fill_viridis_c(alpha = 0.7, na.value = "white") +
-  theme(legend.position = "none")
+  scale_fill_viridis_c("", alpha = 0.7, na.value = "white", direction = -1, breaks = c(0.9, 2.5), labels = c("Low", "High")) +
+  theme(legend.position = c(0.95, 0.85), legend.direction = "horizontal", 
+        legend.justification = "right", legend.background = element_rect(fill = "grey90"))
+#  theme(legend.position = "bottom")
 
 
 gs$g_bind <- ggarrange(
-  gs$g_tr_sp + labs(title = "A. Joint probability density of percentage smear-positive and conversion rate"),
+  gs$g_tr_sp + labs(title = "A. Joint probability density of percentage smear-positive and conversion rate (smear- to smear+)"),
   ggarrange(
     gs$g_cor + labs(title = "B. Correlation"),
     gs$g_den + labs(title = "C. Pooled joint probability density"),

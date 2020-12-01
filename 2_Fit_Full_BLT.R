@@ -56,7 +56,7 @@ exo <- get_exo(F, dr, untr = "full", bg_death = T)
 fitted_total <- sampling(model, data = c(dat, exo), iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
 check_divergences(fitted_total)
 summary(fitted_total, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr"))$summary
-
+summary(fitted_total, pars = c("Delay_Sp", "Delay_Sn"))$summary
 
 ds_total <- list(
   prv = prv,

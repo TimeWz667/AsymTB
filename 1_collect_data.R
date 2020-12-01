@@ -21,8 +21,8 @@ Tab_dat <- bind_rows(lapply(names(countries), function(iso) {
               Sn = sum(Sn), 
               Sp = sum(Sp)) %>%
     mutate(Prv = Sn + Sp, PrvPrSp = Sn / Prv, PrvPrAsym = Asym / Prv,
-           PrvP = Prv / N) %>%
-    select(Country, YearSurvey = Year, PrvPrSp, PrvPrAsym, PrvP) %>%
+           PrvP_M = Prv / N, PrvP_L = qbinom(0.025, N, Prv / N) / N, PrvP_U = qbinom(0.975, N, Prv / N) / N) %>%
+    select(Country, YearSurvey = Year, PrvPrSp, PrvPrAsym, starts_with("PrvP")) %>%
     left_join(notification %>% 
                 mutate(Country = country) %>%
                 group_by(Country, Year) %>%
@@ -34,7 +34,9 @@ Tab_dat <- bind_rows(lapply(names(countries), function(iso) {
                 select(Country, Year, Inc_M, Inc_L, Inc_U)) %>%
     left_join(cdr %>% filter(Year == 2018) %>%
               select(Country, CDR_M = m, CDR_L = l, CDR_U = u)) %>%
-    mutate(CNR = NotiN / Pop, IncR_M = Inc_M / Pop, IncR_L = Inc_L / Pop, IncR_U = Inc_U / Pop,
+    mutate(CNR_M = NotiN / Pop, CNR_L = qbinom(0.025, Pop, NotiN / Pop) / Pop, 
+           CNR_U = qbinom(0.975, Pop, NotiN / Pop) / Pop,
+           IncR_M = Inc_M / Pop, IncR_L = Inc_L / Pop, IncR_U = Inc_U / Pop,
            CDR_L, CDR_M, CDR_U)
 }))
 

@@ -12,7 +12,7 @@ infer_duration <- function(iso, country) {
   require(tidyverse)
   require(rstan)
   
-  ### Load data ----
+  ### Load data --
   load("data/Input_" + iso + ".rdata")
   load(paste0("out/ASC/Post_", iso, ".rdata"))
   load(paste0("out/ANP/Post_", iso, ".rdata"))
@@ -216,7 +216,8 @@ infer_cascade <- function(iso, country) {
       pivot_wider(names_from = Index, values_from = value) %>%
       left_join(gap_to) %>%
       rename(G_sym = Gap_A, G_aware = Gap_S, G_care = Gap_C, G_complete = Gap_T) %>%
-      mutate(C_sym = G_sym, C_aware = G_aware * C_sym, 
+      mutate(C_inc = 1, G_inc = 1, 
+             C_sym = G_sym, C_aware = G_aware * C_sym, 
              C_care = G_care * C_aware, C_complete = G_complete * C_care) %>%
       left_join(wts)
   } else {
@@ -238,7 +239,8 @@ infer_cascade <- function(iso, country) {
       pivot_wider(names_from = Index, values_from = value) %>%
       left_join(gap_to) %>%
       rename(G_sym = Gap_A, G_care = Gap_S, G_complete = Gap_T) %>%
-      mutate(C_sym = G_sym, C_care = G_care * C_sym, C_complete = G_complete * C_care,
+      mutate(C_inc = 1, G_inc = 1, 
+             C_sym = G_sym, C_care = G_care * C_sym, C_complete = G_complete * C_care,
              G_aware = 0, C_aware = 0) %>%
       left_join(wts)
   }
@@ -247,8 +249,10 @@ infer_cascade <- function(iso, country) {
   Cascade_All <- Cascade_Sex %>%
     group_by(Key, Country, ISO) %>%
     summarise(
+      G_inc = sum(G_inc * Wts), 
       G_sym = sum(G_sym * Wts), G_aware = sum(G_aware * Wts), 
       G_care = sum(G_care * Wts), G_complete = sum(G_complete * Wts),
+      C_inc = sum(C_inc * Wts), 
       C_sym = sum(C_sym * Wts), C_aware = sum(C_aware * Wts), 
       C_care = sum(C_care * Wts), C_complete = sum(C_complete * Wts)
     )

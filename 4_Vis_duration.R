@@ -144,8 +144,8 @@ gs$g_Dur_Dur <- Durations$Durations_All %>%
   mutate(DA = DurA, DT = DurS + DurC,Country = countries_lab[Country]) %>%
   ggplot(aes(x = DA * 12, y = DT * 12)) +
   geom_point(aes(colour = Country), alpha = 0.2) +
-  scale_y_discrete("Symptomatic onset to notification, month", breaks = c(0, 4, 8, 12, 16, 24, 36)) +
-  scale_x_continuous("TB-detectable to symptomatic onset, month", breaks = c(0, 4, 8, 12, 16, 24, 36)) +
+  scale_y_continuous("Symptomat onset to notification, month", breaks = c(0, 4, 8, 12, 16, 24, 36)) +
+  scale_x_continuous("TB-detectable to symptom onset, month", breaks = c(0, 4, 8, 12, 16, 24, 36)) +
   facet_wrap(.~Country) +
   theme(legend.position = "none")
 

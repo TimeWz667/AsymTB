@@ -46,18 +46,22 @@ labels_asc <- c(SelfCured = "Self Cured",
 colour_co_asc = c(complete = "#bcbddc",
            care = "#4BB35D",
            aware = "#fd8d3c",
-           sym = "#fdd0a2")
+           sym = "#fdd0a2", 
+           inc = "#9ecae1")
 labels_co_asc = c(complete = "Treatment complete",
            care = "Treatment start",
            aware = "Care-seeking start",
-           sym = "Symptom onset")
+           sym = "Symptom onset",
+           inc = "Incidence")
 
 colour_co_as = c(complete = "#bcbddc",
                   care = "#4BB35D",
-                  sym = "#fdd0a2")
+                  sym = "#fdd0a2", 
+                 inc = "#9ecae1")
 labels_co_as = c(complete = "Treatment complete",
                   care = "Treatment start",
-                  sym = "Symptom onset")
+                  sym = "Symptom onset",
+                 inc = "Incidence")
 
 
 TSS <- list()
@@ -141,14 +145,12 @@ for (i in 1:length(countries)) {
 
 
 
-
+TSS <- bind_rows(TSS)
+Ends <- bind_rows(Ends)
 
 
 
 load("out/Cascade_All.rdata")
-
-TSS <- bind_rows(TSS)
-Ends <- bind_rows(Ends)
 
 
 dat <- Cascade$Cascade_All %>%
@@ -161,9 +163,9 @@ dat <- Cascade$Cascade_All %>%
   select(-Key_M, -Key_L, -Key_U) %>%
   pivot_wider(c(Country, ISO, Index, Stage), values_from = pr, names_from = Stat) %>%
   filter(M > 0) %>%
-  mutate(Stage = factor(Stage, levels = c("sym", "aware", "care", "complete")),
-         L = ifelse(Stage == "complete" & Index == "G", NA, L),
-         U = ifelse(Stage == "complete" & Index == "G", NA, U))
+  mutate(Stage = factor(Stage, levels = c("inc", "sym", "aware", "care", "complete")),
+         L = ifelse(Stage == "inc" | (Stage == "complete" & Index == "G"), NA, L),
+         U = ifelse(Stage == "inc" | (Stage == "complete" & Index == "G"), NA, U))
 
 
 dat_sex <- Cascade$Cascade_Sex %>%
@@ -176,9 +178,9 @@ dat_sex <- Cascade$Cascade_Sex %>%
   select(-Key_M, -Key_L, -Key_U) %>%
   pivot_wider(c(Country, ISO, Sex, Index, Stage), values_from = pr, names_from = Stat) %>%
   filter(M > 0) %>%
-  mutate(Stage = factor(Stage, levels = c("sym", "aware", "care", "complete")),
-         L = ifelse(Stage == "complete" & Index == "G", NA, L),
-         U = ifelse(Stage == "complete" & Index == "G", NA, U))
+  mutate(Stage = factor(Stage, levels = c("inc", "sym", "aware", "care", "complete")),
+         L = ifelse(Stage == "inc" | (Stage == "complete" & Index == "G"), NA, L),
+         U = ifelse(Stage == "inc" | (Stage == "complete" & Index == "G"), NA, U))
 
 
 gs <- list()
@@ -201,7 +203,7 @@ gs$g_cohort <- TSS %>%
 gs$g_cascade <- ggplot(dat %>% filter(Index == "C")) +
   geom_bar(aes(x = Stage, y = M, fill = Stage), stat = "identity", width = 0.6) +
   geom_errorbar(aes(x = Stage, ymin = L, ymax = U), width = 0.3) +
-  scale_y_continuous("Proportion (%)", limits = c(0, 1), labels = scales::percent) +
+  scale_y_continuous("Proportion, %", limits = c(0, 1), labels = scales::percent) +
   scale_x_discrete("", labels = NULL) + 
   scale_fill_manual("Endpoint",
                     values = colour_co_asc,
@@ -213,7 +215,7 @@ gs$g_cascade <- ggplot(dat %>% filter(Index == "C")) +
 gs$g_gaps <- ggplot(dat %>% filter(Index == "G")) +
   geom_bar(aes(x = Stage, y = M, fill = Stage), stat = "identity", width = 0.6) +
   geom_errorbar(aes(x = Stage, ymin = L, ymax = U), width = 0.3) +
-  scale_y_continuous("Proportion (%)", limits = c(0, 1), labels = scales::percent) +
+  scale_y_continuous("Proportion, %", limits = c(0, 1), labels = scales::percent) +
   scale_x_discrete("", labels = NULL) + 
   scale_fill_manual("Endpoint",
                     values = colour_co_asc,
@@ -224,7 +226,7 @@ gs$g_gaps <- ggplot(dat %>% filter(Index == "G")) +
 gs$g_cascade_sex <- ggplot(dat_sex %>% filter(Index == "C")) +
   geom_bar(aes(x = Stage, y = M, fill = Stage), stat = "identity", width = 0.6) +
   geom_errorbar(aes(x = Stage, ymin = L, ymax = U), width = 0.3) +
-  scale_y_continuous("Proportion (%)", limits = c(0, 1), labels = scales::percent) +
+  scale_y_continuous("Proportion, %", limits = c(0, 1), labels = scales::percent) +
   scale_x_discrete("", labels = NULL) + 
   scale_fill_manual("Endpoint",
                     values = colour_co_asc,
@@ -235,7 +237,7 @@ gs$g_cascade_sex <- ggplot(dat_sex %>% filter(Index == "C")) +
 gs$g_gaps_sex <- ggplot(dat_sex %>% filter(Index == "G")) +
   geom_bar(aes(x = Stage, y = M, fill = Stage), stat = "identity", width = 0.6) +
   geom_errorbar(aes(x = Stage, ymin = L, ymax = U), width = 0.3) +
-  scale_y_continuous("Proportion (%)", limits = c(0, 1), labels = scales::percent) +
+  scale_y_continuous("Proportion, %", limits = c(0, 1), labels = scales::percent) +
   scale_x_discrete("", labels = NULL) + 
   scale_fill_manual("Endpoint",
                     values = colour_co_asc,
