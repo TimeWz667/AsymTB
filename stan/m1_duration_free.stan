@@ -19,9 +19,10 @@ data {
   real<lower=0> r_sc_l;
   real<lower=0> r_sc_u;
   real<lower=0> scale_dur;
+  real<lower=0, upper=1> pr_fp;
 
   // Exogenous variables
-  real<lower=0> r_death_bg[n_gp];
+  real<lower=0> r_death_a[n_gp];
   real<lower=0> r_death_sn[n_gp];
   real<lower=0> r_death_sp[n_gp];
 }
@@ -35,7 +36,7 @@ parameters {
   vector<lower=0>[n_gp] r_sym; // symptom development rate == inversion of asymptomatic phase
   
   vector<lower=0, upper=1>[n_gp] prv0; // prevalence of all active TB
-  vector<lower=-0.15, upper=0.15>[n_gp] adr; // annual decline rate
+  vector<lower=-0.2, upper=0.2>[n_gp] adr; // annual decline rate
 }
 transformed parameters {
   vector<lower=0>[n_gp] ra;
@@ -59,9 +60,9 @@ transformed parameters {
   
 
   for (j in 1:n_gp) {
-    ra[j] = r_sc + r_death_bg[j];
-    rn[j] = r_sc + r_death_bg[j] + r_death_sn[j];
-    rp[j] = r_sc + r_death_bg[j] + r_death_sp[j];
+    ra[j] = r_sc + r_death_a[j];
+    rn[j] = r_sc + r_death_sn[j];
+    rp[j] = r_sc + r_death_sp[j];
     
     sn0[j] = (1 - p_sp) * r_sym[j] / (r_tr + rn[j] + r_det_sn[j] - adr[j]);
     sp0[j] = (p_sp * r_sym[j] + r_tr * sn0[j]) / (rp[j] + r_det_sp[j] - adr[j]);
@@ -101,7 +102,7 @@ model {
   r_det_sp ~ inv_gamma(scale_dur, scale_dur);
   r_det_sn ~ inv_gamma(scale_dur, scale_dur);
   r_sym ~ inv_gamma(scale_dur, scale_dur);
-  adr ~ uniform(-0.15, 0.15);
+  adr ~ uniform(-0.2, 0.2);
   
   for (j in 1:n_gp) {
     // prevalence to prevalence survey data
@@ -111,8 +112,8 @@ model {
 
     // notification rate to notification data
     for (i in 1:n_t) {
-      target += poisson_lpmf(NotiSn[j, i] | nr_sn[j, i] * Pop[j, i]);
-      target += poisson_lpmf(NotiSp[j, i] | nr_sp[j, i] * Pop[j, i]);
+      target += poisson_lpmf(NotiSn[j, i] | nr_sn[j, i] * Pop[j, i] / (1 - pr_fp));
+      target += poisson_lpmf(NotiSp[j, i] | nr_sp[j, i] * Pop[j, i] / (1 - pr_fp));
     }
   }
 }

@@ -18,15 +18,16 @@ data {
   real<lower=0> r_sc_l;
   real<lower=0> r_sc_u;
   real<lower=0> scale_dur;
+  real<lower=0, upper=1> pr_fp;
 
   // Exogenous variables
-  real<lower=0> r_death_bg[n_gp];
-  real<lower=0> r_death_tb[n_gp];
+  real<lower=0> r_death_a[n_gp];
+  real<lower=0> r_death_s[n_gp];
 }
 parameters {
   vector<lower=0>[n_gp] r_det;
   vector<lower=0, upper=1>[n_gp] prv0;
-  vector<lower=-0.15, upper=0.15>[n_gp] adr;
+  vector<lower=-0.2, upper=0.2>[n_gp] adr;
   vector<lower=0>[n_gp] r_sym;
   vector<lower=0>[n_gp] r_aware;
   vector<lower=r_sc_l, upper = r_sc_u>[n_gp] r_sc;
@@ -50,9 +51,9 @@ transformed parameters {
   matrix<lower=0>[n_gp, n_t] nr;
   
   for (j in 1:n_gp) {
-    ra[j] = r_sc[j] + r_death_bg[j];
-    rs[j] = r_sc[j] + r_death_bg[j] + r_death_tb[j];
-    rc[j] = r_sc[j] + r_death_bg[j] + r_death_tb[j];
+    ra[j] = r_sc[j] + r_death_a[j];
+    rs[j] = r_sc[j] + r_death_s[j];
+    rc[j] = r_sc[j] + r_death_s[j];
     
     a0[j] = (rs[j] + r_aware[j] - adr[j]) / r_sym[j];
     c0[j] = r_aware[j] / (rc[j] + r_det[j] - adr[j]);
@@ -81,7 +82,7 @@ model {
   r_aware ~ inv_gamma(scale_dur, scale_dur);
   r_sc ~ uniform(r_sc_l, r_sc_u);
   
-  adr ~ uniform(-0.15, 0.15);
+  adr ~ uniform(-0.2, 0.2);
 
   for (j in 1:n_gp) {
     target += binomial_lpmf(Asym[j] | N[j], prv_a[j]);
@@ -89,7 +90,7 @@ model {
     target += binomial_lpmf(CS[j] | N[j], prv_c[j]);
     
     for (i in 1:n_t) {
-      target += poisson_lpmf(Noti[j, i] | nr[j, i] * Pop[j, i]);
+      target += poisson_lpmf(Noti[j, i] | nr[j, i] * Pop[j, i] / (1 - pr_fp));
     }
   }
 }

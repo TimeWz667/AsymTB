@@ -16,9 +16,11 @@ data {
   // Prior knowledge
   real<lower=0> r_sc_l;
   real<lower=0> r_sc_u;
+  real<lower=0, upper=1> pr_fp;
+  
+  real<lower=0> r_death_a;
   real<lower=0> r_death_sn;
   real<lower=0> r_death_sp;
-  real<lower=0> r_death_bg;
   real<lower=0> scale_dur;
 }
 parameters {
@@ -27,14 +29,14 @@ parameters {
   real<lower=0> r_det_sp; // rate to notification, sm+
   real<lower=0> r_tr; // conversion rate, sm- to sm+
   real<lower=0, upper=1> prv0; // prevalence of all active TB
-  real<lower=-0.15, upper=0.15> adr; // annual decline rate
+  real<lower=-0.2, upper=0.2> adr; // annual decline rate
   real<lower=0> r_sym; // symptom development rate == inversion of asymptomatic phase
   real<lower=r_sc_l, upper = r_sc_u> r_sc; // self-cure rate
 }
 transformed parameters {
-  real<lower=0> ra = r_sc + r_death_bg;
-  real<lower=0> rn = r_sc + r_death_bg + r_death_sn;
-  real<lower=0> rp = r_sc + r_death_bg + r_death_sp;
+  real<lower=0> ra = r_sc + r_death_a;
+  real<lower=0> rn = r_sc + r_death_sn;
+  real<lower=0> rp = r_sc + r_death_sp;
 
   real<lower=0> sn0;
   real<lower=0> sp0;
@@ -83,7 +85,7 @@ model {
   r_det_sp ~ inv_gamma(scale_dur, scale_dur);
   r_det_sn ~ inv_gamma(scale_dur, scale_dur);
   r_sym ~ inv_gamma(scale_dur, scale_dur);
-  adr ~ uniform(-0.15, 0.15);
+  adr ~ uniform(-0.2, 0.2);
 
   prv0 ~ uniform(0, 1);
 
@@ -95,8 +97,8 @@ model {
 
   // notification rate to notification data
   for (i in 1:n_t) {
-    target += poisson_lpmf(NotiSn[i] | nr_sn[i] * Pop[i]);
-    target += poisson_lpmf(NotiSp[i] | nr_sp[i] * Pop[i]);
+    target += poisson_lpmf(NotiSn[i] | nr_sn[i] * Pop[i] / (1 - pr_fp));
+    target += poisson_lpmf(NotiSp[i] | nr_sp[i] * Pop[i] / (1 - pr_fp));
   }
 }
 generated quantities {

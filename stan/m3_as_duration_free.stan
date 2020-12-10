@@ -28,7 +28,7 @@ parameters {
   vector<lower=0, upper=1>[n_gp] prv0;
   vector<lower=-0.2, upper=0.2>[n_gp] adr;
   vector<lower=0>[n_gp] r_sym;
-  vector<lower=r_sc_l, upper = r_sc_u>[n_gp] r_sc;
+  real<lower=r_sc_l, upper = r_sc_u> r_sc;
 }
 transformed parameters {
   vector<lower=0>[n_gp] ra;
@@ -47,8 +47,8 @@ transformed parameters {
   
   
   for (j in 1:n_gp) {
-    ra[j] = r_sc[j] + r_death_a[j];
-    rs[j] = r_sc[j] + r_death_s[j];
+    ra[j] = r_sc + r_death_a[j];
+    rs[j] = r_sc + r_death_s[j];
     
     a0[j] = rs[j] + r_det[j] - adr[j];
     s0[j] = r_sym[j];
