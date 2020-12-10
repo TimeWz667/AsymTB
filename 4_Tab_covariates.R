@@ -1,12 +1,21 @@
+library(tidyverse)
 library(rstan)
 
 
 frm_mci <- function(ds, digits = 1) {
-  sprintf("%s (%s-%s)", 
+  sprintf("%s (%s \u2013 %s)", 
           format(mean(ds, na.rm = T), nsmall = digits, digits = digits, big.mark = ","), 
           format(quantile(ds, 0.025, na.rm = T), nsmall = digits, digits = digits, big.mark = ","), 
           format(quantile(ds, 0.975, na.rm = T), nsmall = digits, digits = digits, big.mark = ","))
 }
+
+frm_pci <- function(ds, digits = NULL) {
+  sprintf("%s (%s \u2013 %s)", 
+          scales::percent(mean(ds, na.rm = T), accuracy = digits), 
+          scales::percent(quantile(ds, 0.025, na.rm = T), accuracy = digits), 
+          scales::percent(quantile(ds, 0.975, na.rm = T), accuracy = digits))
+}
+
 
 
 fetch_dur_a <- function(sub) {
@@ -236,7 +245,7 @@ fetch_dur_total <- function(sub) {
   sub <- glue::as_glue(sub)
   
   load(file = "out/Full/" + sub +"/All.rdata")
-  
+  load(file = "out/Full/" + sub +"/Total.rdata")
 
   dur_total <- with(extract(fitted_total, pars = c("dur_a", "p_sp", "Delay_Sn", "Delay_Sp", "IncN_A", "IncN_S", 
                                                    "CDR_A", "CDR_S", "PrvN_A", "PrvN_Sn", "PrvN_Sp")), {
@@ -324,8 +333,8 @@ fetch_dur_total <- function(sub) {
       PrvAll = frm_mci(PrvN_All / Pop * 1E5, digits = 0),
       IncSym = frm_mci(IncN_S / Pop * 1E5, digits = 0),
       IncAll = frm_mci(IncN_All / Pop * 1E5, digits = 0),
-      CDR_Sym = frm_mci(CDR_S, 2),
-      CDR_All = frm_mci(CDR_All, 2),
+      CDR_Sym = frm_pci(CDR_S, 1),
+      CDR_All = frm_pci(CDR_All, 1),
     ) %>%
     separate(Group, c("Variable", "Value"), "_") %>%
     mutate(Variable = factor(Variable, c("Overall", "Sex", "Age", "HIV")),

@@ -33,7 +33,7 @@ infer_duration <- function(iso, country) {
                   Sex = rep(c("Female", "Male"), each = n_iter), 
                   Wts = c(inc / rowSums(inc)))
 
-    pars <- c("dur_a", "dur_s", "dur_c", "NotiN", "CDR_A", "CDR_S",
+    pars <- c("dur_a", "dur_s", "dur_c", "adr", "NotiN", "CDR_A", "CDR_S",
               "IncN_A", "IncN_S", "IncN_C", "PrvN_A", "PrvN_S", "PrvN_C")
     
     pars <- apply(expand.grid(pars, c("[1]", "[2]")), 1, function(x) paste0(x, collapse = ""))
@@ -55,7 +55,7 @@ infer_duration <- function(iso, country) {
                   Sex = rep(c("Female", "Male"), each = n_iter), 
                   Wts = c(inc / rowSums(inc)))
     
-    pars <- c("dur_a", "dur_s", "NotiN", "CDR_A", "CDR_S", 
+    pars <- c("dur_a", "dur_s", "adr", "NotiN", "CDR_A", "CDR_S", 
               "IncN_A", "IncN_S", "PrvN_A", "PrvN_S")
     
     pars <- apply(expand.grid(pars, c("[1]", "[2]")), 1, function(x) paste0(x, collapse = ""))
@@ -86,58 +86,54 @@ infer_duration <- function(iso, country) {
   
   ### Focus on smear-positive -----
   
-  stats <- extract(fitted_anp_uni, pars = c("prv", "pr_a", "pr_sp", "dur_sp", "inc_a", "inc_s", "p_sp", "r_det_sp"))
+  inc <- extract(fitted_anp_uni, pars = c("IncN_A"))$IncN_A
+  n_iter <- dim(inc)[1]
   
-  prsp <- with(prevalence, Sp / (Sp + Sn))
-  
-  n_iter <- dim(stats$inc_a)[1]
-  
-  pop <- matrix(dat_anp$Pop[, ncol(dat_anp$Pop)], n_iter, 2, byrow = T)
-  wts <- stats$inc_a[, , dim(stats$inc_a)[3]] * pop
-  
-  wts <- tibble(Key = rep(1:n_iter, 2), 
+  inc <- tibble(Key = rep(1:n_iter, 2), 
                 Sex = rep(c("Female", "Male"), each = n_iter), 
-                Wts = c(wts / rowSums(wts)))
+                Wts = c(inc / rowSums(inc)))
   
-  stats <- with(stats, {
-    tibble(Key = 1:n_iter, 
-           PrvSp_Female = prv[, 1, dim(prv)[3]] * prsp,
-           PrvSp_Male = prv[, 2, dim(prv)[3]] * prsp,
-           PrvSymSp_Female = prv[, 1, dim(prv)[3]] * pr_sp[, 1],
-           PrvSymSp_Male = prv[, 2, dim(prv)[3]] * pr_sp[, 2],
-           DurSp_Female = dur_sp[, 1], 
-           DurSp_Male = dur_sp[, 2],
-           CDRSp_Female = dur_sp[, 1] * r_det_sp[, 1],
-           CDRSp_Male = dur_sp[, 2] * r_det_sp[, 2]
-           ) 
-  }) %>%
+  
+  pars <- c("dur_sp", "adr", "NotiN_Sp", "CDR_Sp", 
+            "PrvN_A", "PrvN_Sp")
+  
+  pars <- apply(expand.grid(pars, c("[1]", "[2]")), 1, function(x) paste0(x, collapse = ""))
+  
+  dur_sp <- as_tibble(extract(fitted_anp_uni, pars = pars)) %>%
+    mutate(Key = 1:n_iter) %>%
     pivot_longer(-Key) %>%
-    tidyr::extract(name, c("Index", "Sex"), "(\\w+)_(\\w+)") %>%
+    tidyr::extract(name, c("Index", "Sex"), "(\\w+)\\[(\\d)\\]") %>%
+    mutate(Sex = ifelse(Sex == 1, "Female", "Male")) %>%
     pivot_wider(names_from = Index, values_from = value) %>%
-    rename(CDR_Sp = CDRSp) %>%
-    mutate(Noti_Sp = with(dat_anp, {sum(NotiSp[, ncol(NotiSp)])}),
-           CNR_Sp = Noti_Sp / with(dat_anp, {sum(Pop[, ncol(NotiSp)])}),
-           PN_SymSp = PrvSymSp / CNR_Sp, PN_Sp = PrvSp / CNR_Sp,
-           Inc_Sp = CNR_Sp / CDR_Sp) %>%
-    left_join(wts)
+    rename(DurSp = dur_sp) %>%
+    mutate(PrvN_SymSp = PrvN_A + PrvN_Sp) %>%
+    left_join(pop) %>%
+    left_join(inc) %>%
+    mutate(Country = country, ISO = iso, 
+           DelaySp = DurSp, 
+           CNR_Sp = NotiN_Sp / Pop,
+           Prv_SymSp = PrvN_SymSp / Pop,
+           Prv_Sp = PrvN_Sp / Pop,
+           PN_SymSp = PrvN_SymSp / NotiN_Sp, PN_Sp = PrvN_Sp / NotiN_Sp)
+
   
-  stats_all <- stats %>%
+  dur_sp_all <- dur_sp %>%
     group_by(Key) %>%
-    summarise(DurSp = sum(DurSp * Wts), 
-              PrvSp = sum(PrvSp * Wts), PrvSymSp = sum(PrvSymSp * Wts), 
-              Noti_Sp = sum(Noti_Sp * Wts), CNR_Sp = sum(CNR_Sp * Wts),
-              Inc_Sp = sum(Inc_Sp * Wts), CDR_Sp = sum(CDR_Sp * Wts), 
+    summarise(DelaySp = sum(DelaySp * Wts), 
+              Prv_Sp = sum(Prv_Sp * Wts), Prv_SymSp = sum(Prv_SymSp * Wts), 
+              Noti_Sp = sum(NotiN_Sp * Wts), CNR_Sp = sum(CNR_Sp * Wts),
               PN_SymSp = sum(PN_SymSp * Wts), PN_Sp = sum(PN_Sp * Wts))
   
   ### Collect results -----
   res <- list()
   
-  res$Durations_Sex <- durations
+  res$Durations_Sex <- durations %>% left_join(dur_sp)
   
   res$Durations_All <- durations %>% 
     group_by(Country, ISO, Key) %>%
-    #left_join(stats_all) %>%
+    left_join(dur_sp_all) %>%
     summarise(DurA = sum(DurA * Wts), DurS = sum(DurS * Wts), DurC = sum(DurC * Wts),
+              ADR = sum(adr * Wts),
               NotiN = sum(NotiN), IncN_A = sum(IncN_A), IncN_S = sum(IncN_S), IncN_C = sum(IncN_C),
               PrvN_A = sum(PrvN_A), PrvN_S = sum(PrvN_S), PrvN_C = sum(PrvN_C), PrvN_All = sum(PrvN_All),
               Pop = sum(Pop),
@@ -263,3 +259,187 @@ infer_cascade <- function(iso, country) {
   )
 }
 
+
+infer_cohort <- function(iso, country, n_sim = 200) {
+  require(odin)
+  iso <- glue::as_glue(iso)
+
+  
+  ### Load data ----
+  load("out/ASC/Post_" + iso + ".rdata")
+  load("data/TO_" + iso + ".rdata")
+  
+  if (country %in% countries_cs) {
+    wts <- extract(fitted_asc_uni, pars = "IncN_A")$IncN_A
+    wts <- wts / rowSums(wts)
+  } else {
+    wts <- extract(fitted_as_uni, pars = "IncN_A")$IncN_A
+    wts <- wts / rowSums(wts)
+  }
+  
+  
+  
+  ### Cascade, time ----
+  if (country %in% countries_cs) {
+    
+    pars <- extract(fitted_asc_uni, c("r_sym", "r_aware", "r_det", "r_sc"))
+
+    f <- "odin/ode_asct_cohort.R"
+    model <- odin(f)
+    
+    ys_ts <- data.table::rbindlist(lapply(1:2, function(sex) {
+      sims <- lapply(1:n_sim, function(j) {
+        inp <- list(
+          r_sym = pars$r_sym[j, sex],
+          r_aware = pars$r_aware[j, sex],
+          r_sc = pars$r_sc[j, sex],
+          r_det = pars$r_det[j, sex],
+          r_cure = pars_to$r_cure,
+          r_ltfu = pars_to$r_ltfu,
+          r_death_a = dat_asc$r_death_a[sex],
+          r_death_s = dat_asc$r_death_s[sex],
+          r_death_ontr = pars_to$r_tbmu_ontr
+        )
+        cm <- model(user = inp)
+        
+        ys <- cm$run(seq(0, 2, 0.02))
+        
+        data.table::data.table(ys) %>%
+          pivot_longer(cols = A:Cured)
+      })
+      
+      data.table::rbindlist(sims) %>%
+        group_by(t, name) %>%
+        summarise(value = mean(value)) %>%
+        mutate(Sex = sex)
+      
+    })) %>%
+      mutate(Sex = ifelse(Sex == 1, "Female", "Male"),
+             name = factor(name, levels = c("Death", "LTFU", "SelfCured", "Cured", "Tr", "C", "S", "A")))
+    
+    ys_ts_total <- ys_ts %>% left_join(data.frame(Sex = c("Female", "Male"), wts = colMeans(wts))) %>%
+      group_by(t, name) %>%
+      summarise(value = weighted.mean(value, wts)) %>%
+      mutate(Sex = "Total")
+    
+    
+    ys_end <- data.table::rbindlist(lapply(1:2, function(sex) {
+      sims <- lapply(1:n_sim, function(j) {
+        inp <- list(
+          r_sym = pars$r_sym[j, sex],
+          r_aware = pars$r_aware[j, sex],
+          r_sc = pars$r_sc[j, sex],
+          r_det = pars$r_det[j, sex],
+          r_cure = pars_to$r_cure,
+          r_ltfu = pars_to$r_ltfu,
+          r_death_a = dat_asc$r_death_a[sex],
+          r_death_s = dat_asc$r_death_s[sex],
+          r_death_ontr = pars_to$r_tbmu_ontr
+        )
+        cm <- model(user = inp)
+        
+        ys <- cm$run(seq(0, 20, 0.5))
+        
+        data.table::data.table(ys) %>%
+          pivot_longer(cols = A:Cured) %>%
+          filter(t == 20)
+      })
+      
+      data.table::rbindlist(sims) %>%
+        group_by(t, name) %>%
+        summarise(value = mean(value)) %>%
+        mutate(Sex = sex)
+      
+    })) %>%
+      mutate(Sex = ifelse(Sex == 1, "Female", "Male"),
+             name = factor(name, levels = c("Death", "LTFU", "SelfCured", "Cured", "Tr", "C", "S", "A"))) %>%
+      filter(name %in% c("Death", "LTFU", "SelfCured", "Cured"))
+    
+    
+    ys_end_total <- ys_end %>% left_join(data.frame(Sex = c("Female", "Male"), wts = colMeans(wts))) %>%
+      group_by(t, name) %>%
+      summarise(value = weighted.mean(value, wts)) %>%
+      mutate(Sex = "Total")
+  } else {
+    pars <- extract(fitted_as_uni, c("r_sym", "r_det", "r_sc"))
+    f <- "odin/ode_ast_cohort.R"
+    model <- odin(f)
+    
+    ys_ts <- data.table::rbindlist(lapply(1:2, function(sex) {
+      sims <- lapply(1:n_sim, function(j) {
+        inp <- list(
+          r_sym = pars$r_sym[j, sex],
+          r_sc = pars$r_sc[j, sex],
+          r_det = pars$r_det[j, sex],
+          r_cure = pars_to$r_cure,
+          r_ltfu = pars_to$r_ltfu,
+          r_death_a = dat_as$r_death_a[sex],
+          r_death_s = dat_as$r_death_s[sex],
+          r_death_ontr = pars_to$r_tbmu_ontr
+        )
+        cm <- model(user = inp)
+        
+        ys <- cm$run(seq(0, 2, 0.02))
+        
+        data.table::data.table(ys) %>%
+          pivot_longer(cols = A:Cured)
+      })
+      
+      data.table::rbindlist(sims) %>%
+        group_by(t, name) %>%
+        summarise(value = mean(value)) %>%
+        mutate(Sex = sex)
+      
+    })) %>%
+      mutate(Sex = ifelse(Sex == 1, "Female", "Male"),
+             name = factor(name, levels = c("Death", "LTFU", "SelfCured", "Cured", "Tr", "S", "A")))
+    
+    ys_ts_total <- ys_ts %>% left_join(data.frame(Sex = c("Female", "Male"), wts = colMeans(wts))) %>%
+      group_by(t, name) %>%
+      summarise(value = weighted.mean(value, wts)) %>%
+      mutate(Sex = "Total")
+    
+    
+    ys_end <- data.table::rbindlist(lapply(1:2, function(sex) {
+      sims <- lapply(1:n_sim, function(j) {
+        inp <- list(
+          r_sym = pars$r_sym[j, sex],
+          r_sc = pars$r_sc[j, sex],
+          r_det = pars$r_det[j, sex],
+          r_cure = pars_to$r_cure,
+          r_ltfu = pars_to$r_ltfu,
+          r_death_a = dat_as$r_death_a[sex],
+          r_death_s = dat_as$r_death_s[sex],
+          r_death_ontr = pars_to$r_tbmu_ontr
+        )
+        cm <- model(user = inp)
+        
+        ys <- cm$run(seq(0, 20, 0.5))
+        
+        data.table::data.table(ys) %>%
+          pivot_longer(cols = A:Cured) %>%
+          filter(t == 20)
+      })
+      
+      data.table::rbindlist(sims) %>%
+        group_by(t, name) %>%
+        summarise(value = mean(value)) %>%
+        mutate(Sex = sex)
+      
+    })) %>%
+      mutate(Sex = ifelse(Sex == 1, "Female", "Male"),
+             name = factor(name, levels = c("Death", "LTFU", "SelfCured", "Cured", "Tr", "S", "A"))) %>%
+      filter(name %in% c("Death", "LTFU", "SelfCured", "Cured"))
+    
+    
+    ys_end_total <- ys_end %>% left_join(data.frame(Sex = c("Female", "Male"), wts = colMeans(wts))) %>%
+      group_by(t, name) %>%
+      summarise(value = weighted.mean(value, wts)) %>%
+      mutate(Sex = "Total")
+  }
+  
+  list(
+    Cohort = rbind(ys_ts, ys_ts_total) %>% mutate(Country = country, ISO = iso),
+    End = rbind(ys_end, ys_end_total) %>% mutate(Country = country, ISO = iso)
+  )
+}

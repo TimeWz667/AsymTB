@@ -4,7 +4,7 @@ library(rstan)
 options(mc.cores = min(5, parallel::detectCores()))
 
 
-source("R/get_exo.R")
+source("R/var_exo_asc.R")
 source("data/country_list.R")
 
 
@@ -13,11 +13,8 @@ n_iter = 3000
 n_collect = 1000
 n_chain = 3
 
+
 ###
-
-
-
-
 for (i in 1:length(countries)) {
   iso <- glue::as_glue(names(countries)[i])
   country <- countries[i]
@@ -26,22 +23,7 @@ for (i in 1:length(countries)) {
   
   load("data/Input_" + iso + ".rdata")
   
-  if (country %in% countries_cs) {
-    prv <- prevalence %>%
-      group_by(Year, Sex) %>%
-      summarise(N = sum(N),
-                Asym = sum(Asym),
-                Sym = sum(Sym),
-                SymNC = sum(SymNC),
-                SymCS = sum(SymCS))
-  } else {
-    prv <- prevalence %>%
-      group_by(Year, Sex) %>%
-      summarise(N = sum(N),
-                Asym = sum(Asym),
-                Sym = sum(Sym))
-  }
-  
+  prv <- prevalence %>% arrange(Sex)
   
   noti <- notification %>% 
     group_by(Year, Sex) %>%
@@ -55,12 +37,16 @@ for (i in 1:length(countries)) {
     noti <- noti %>% filter(Year >= 2014)
   } else if (iso == "VNM") {
     noti <- noti %>% filter(Year >= 2016)
+  } else if (iso == "PHL") {
+    noti <- noti %>% filter(Year >= 2015)
   }
   
-  dr <- (mortality %>%
-           group_by(Year, Sex) %>%
-           summarise(DeaR = sum(DeaR * Pop) / sum(Pop), Pop = sum(Pop)))$DeaR
   
+  mor <- mortality %>%
+    group_by(Year, Sex) %>%
+    summarise(DeaR = weighted.mean(DeaR, Noti), pr_sp = mean(pr_sp)) %>%
+    arrange(Sex, Year)
+    
   yrs <- sort(unique(noti$Year))
   n_t <- length(yrs)
 
@@ -79,21 +65,20 @@ for (i in 1:length(countries)) {
     n_gp = nrow(prv)
   )
   
-  
-  exo <- get_exo_sym(dr, "avg")
+  exo <- get_exo_asc(mor, untr_a = "no_untr", untr_s = "avg", bg_death = T, pr_fp = 0)
   
   dat_as <- c(dat, exo)
   
-  model <- readRDS(file = "stan/m3_as_uni.rds")
+  model <- readRDS(file = "stan/m3_as_duration_free.rds")
   fitted_as_uni <- sampling(model, data = dat_as, iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
   summary(fitted_as_uni, pars = c("r_sym", "r_det", "adr", "dur_a", "dur_s"))$summary
   check_divergences(fitted_as_uni)
   
   
-  model <- readRDS(file = "stan/m3_as_fixed.rds")
-  fitted_as_fixed <- sampling(model, data = dat_as, iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
-  check_divergences(fitted_as_fixed)
-  summary(fitted_as_fixed, pars = c("r_sym", "r_det", "adr", "dur_a", "dur_s"))$summary
+  #model <- readRDS(file = "stan/m3_as_fixed.rds")
+  #fitted_as_fixed <- sampling(model, data = dat_as, iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
+  #check_divergences(fitted_as_fixed)
+  #summary(fitted_as_fixed, pars = c("r_sym", "r_det", "adr", "dur_a", "dur_s"))$summary
   
   if (country %in% countries_cs) {
     ## Asymptomatic -> Symptomatic -> Care-seeking attempt -> Notification
@@ -110,29 +95,25 @@ for (i in 1:length(countries)) {
       n_gp = nrow(prv)
     )
     
-    exo <- get_exo_sym(dr, "avg")
+    exo <- get_exo_asc(mor, untr_a = "no_untr", untr_s = "avg", bg_death = T, pr_fp = 0)
     
     dat_asc <- c(dat, exo)
     
-    model <- readRDS(file = "stan/m3_asc_uni.rds")
+    model <- readRDS(file = "stan/m3_asc_duration_free.rds")
     fitted_asc_uni <- sampling(model, data = dat_asc, iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
     summary(fitted_asc_uni, pars = c("r_sym", "r_aware", "r_det", "adr", "dur_a", "dur_s", "dur_c"))$summary
     check_divergences(fitted_asc_uni)
     
-    model <- readRDS(file = "stan/m3_asc_fixed.rds")
-    fitted_asc_fixed <- sampling(model, data = dat_asc, iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
-    summary(fitted_asc_fixed, pars = c("r_sym", "r_aware", "r_det", "adr", "dur_a", "dur_s", "dur_c"))$summary
-    check_divergences(fitted_asc_fixed)
+    #model <- readRDS(file = "stan/m3_asc_fixed.rds")
+    #fitted_asc_fixed <- sampling(model, data = dat_asc, iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
+    #summary(fitted_asc_fixed, pars = c("r_sym", "r_aware", "r_det", "adr", "dur_a", "dur_s", "dur_c"))$summary
+    #check_divergences(fitted_asc_fixed)
     
-    save(fitted_as_uni, fitted_as_fixed, dat_as,
-         fitted_asc_uni, fitted_asc_fixed, dat_asc,
+    save(fitted_as_uni, dat_as,
+         fitted_asc_uni, dat_asc,
          file = paste0("out/ASC/Post_", iso, ".rdata"))
   } else {
-    save(fitted_as_uni, fitted_as_fixed, dat_as,
+    save(fitted_as_uni, dat_as,
          file = paste0("out/ASC/Post_", iso, ".rdata"))
   }
-  
 }
-
-
-

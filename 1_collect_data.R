@@ -11,6 +11,11 @@ Tab_dat <- bind_rows(lapply(names(countries), function(iso) {
   iso <- glue::as_glue(iso)
   load("data/Input_" + iso + ".rdata")
   
+  mor <- mortality %>%
+    group_by(Year, Sex) %>%
+    summarise(DeaR = weighted.mean(DeaR, Noti), pr_sp = mean(pr_sp))
+  
+  pr_sp <- mor$pr_sp[1]
   
   prevalence %>%
     mutate(Country = country) %>%
@@ -37,11 +42,15 @@ Tab_dat <- bind_rows(lapply(names(countries), function(iso) {
     mutate(CNR_M = NotiN / Pop, CNR_L = qbinom(0.025, Pop, NotiN / Pop) / Pop, 
            CNR_U = qbinom(0.975, Pop, NotiN / Pop) / Pop,
            IncR_M = Inc_M / Pop, IncR_L = Inc_L / Pop, IncR_U = Inc_U / Pop,
-           CDR_L, CDR_M, CDR_U)
+           CDR_L, CDR_M, CDR_U,
+           MorF = round(mor$DeaR[1], 4),
+           MorM = round(mor$DeaR[2], 4),
+           MorSym = round(pr_sp * 0.12 + (1 - pr_sp) * 0.022, 4))
 }))
 
 
 t(Tab_dat)
 
+write.csv(t(Tab_dat), "docs/tabs/Data.csv")
 save(Tab_dat, file = "out/summary_data.rdata")
 

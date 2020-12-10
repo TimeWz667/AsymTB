@@ -2,6 +2,8 @@ library(ggplot2)
 library(tidyverse)
 library(rstan)
 
+
+theme_set(theme_bw() + theme(text = element_text(family = "sans")))
 #### Countries
 source("data/country_list.R")
 
@@ -94,7 +96,7 @@ for (i in 1:length(countries)) {
   gs$g_CNR <- ggplot(fore %>% filter(Stage == "N")) +
     geom_line(aes(x = Year, y = value, group = Sim), alpha = 0.2, colour = "pink") +
     geom_point(data = dat_cnr %>% filter(Sex != "Total"), aes(x = Year, y = value)) +
-    scale_y_continuous("Case notification rate, per 100 000", labels = function(x) x * 1E5) +
+    scale_y_continuous("Case notification rate, per 100,000", labels = function(x) x * 1E5) +
     scale_x_continuous("Year", breaks = c(2010, 2013, 2016, 2019)) + 
     facet_grid(.~Sex) +
     expand_limits(y = 0, x = 2010)
@@ -103,7 +105,7 @@ for (i in 1:length(countries)) {
   gs$g_Prv <- ggplot(fore %>% filter(Stage != "N")) +
     geom_line(aes(x = Year, y = value, group = Sim), alpha = 0.2, colour = "pink") +
     geom_point(data = dat_prv %>% filter(Sex != "Total"), aes(x = Year, y = value)) +
-    scale_y_continuous("Prevalence, per 100 000", labels = function(x) x * 1E5) +
+    scale_y_continuous("Prevalence, per 100,000", labels = function(x) x * 1E5) +
     scale_x_continuous("Year", breaks = c(2010, 2013, 2016, 2019)) + 
     facet_grid(Stage~Sex, labeller = labeller(Stage = c(A = "Asymptomatic TB", S = "Symptomatic TB"))) +
     expand_limits(y = 0, x = 2010)

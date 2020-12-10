@@ -4,10 +4,8 @@ library(rstan)
 options(mc.cores = min(5, parallel::detectCores()))
 
 
-source("R/get_exo.R")
-
-
-load("data/Input_KEN.rdata")
+source("R/var_exo_anp.R")
+load("data/Input_KEN_Full.rdata")
 
 
 ###
@@ -43,16 +41,18 @@ dat <- list(
   n_t = n_t
 )
 
-dr <- mortality %>%
+
+mor <- mortality %>%
   group_by(Year) %>%
-  summarise(DeaR = sum(DeaR * Pop) / sum(Pop))
-dr <- dr$DeaR
+  summarise(DeaR = weighted.mean(DeaR, Noti)) %>%
+  arrange(Year)
+
+
+exo <- get_exo_anp(mor, untr_a = "no_untr", untr_s = "full", bg_death = T, pr_fp = 0)
 
 
 
 model <- readRDS(file = "stan/m0.rds")
-
-exo <- get_exo(F, dr, untr = "full", bg_death = T)
 fitted_total <- sampling(model, data = c(dat, exo), iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
 check_divergences(fitted_total)
 summary(fitted_total, pars = c("r_sym", "r_det_sn", "r_det_sp", "p_sp", "r_tr"))$summary
@@ -83,11 +83,13 @@ noti <- notification %>%
             Pop = round(sum(Pop))) %>%
   arrange(Agp)
 
-dr <- mortality %>%
+mor <- mortality %>%
   group_by(Year, Agp) %>%
-  summarise(DeaR = sum(DeaR * Pop) / sum(Pop)) %>%
-  arrange(Agp)
-dr <- dr$DeaR
+  summarise(DeaR = weighted.mean(DeaR, Noti)) %>%
+  arrange(Year, Agp)
+
+
+exo <- get_exo_anp(mor, untr_a = "no_untr", untr_s = "full", bg_death = T, pr_fp = 0)
 
 
 yrs <- sort(unique(noti$Year))
@@ -106,10 +108,6 @@ dat <- list(
   n_t = n_t,
   n_gp = nrow(prv)
 )
-
-
-exo <- get_exo(rep(F, nrow(prv)), dr, untr = "full", bg_death = T)
-
 
 model <- readRDS(file = "stan/m1_duration_free.rds")
 fitted_age <- sampling(model, data = c(dat, exo), iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
@@ -147,11 +145,12 @@ noti <- notification %>%
             Pop = round(sum(Pop))) %>%
   arrange(Sex)
 
-dr <- mortality %>%
+mor <- mortality %>%
   group_by(Year, Sex) %>%
-  summarise(DeaR = sum(DeaR * Pop) / sum(Pop)) %>%
-  arrange(Sex)
-dr <- dr$DeaR
+  summarise(DeaR = weighted.mean(DeaR, Noti)) %>%
+  arrange(Year, Sex)
+
+exo <- get_exo_anp(mor, untr_a = "no_untr", untr_s = "full", bg_death = T, pr_fp = 0)
 
 
 yrs <- sort(unique(noti$Year))
@@ -171,8 +170,6 @@ dat <- list(
   n_gp = nrow(prv)
 )
 
-
-exo <- get_exo(rep(F, nrow(prv)), dr, untr = "full", bg_death = T)
 
 model <- readRDS(file = "stan/m1_duration_free.rds")
 fitted_sex <- sampling(model, data = c(dat, exo), iter = n_iter, warmup = n_iter - n_collect, chain = n_chain)
@@ -211,10 +208,14 @@ noti <- notification %>%
             Pop = round(sum(Pop))) %>%
   arrange(HIV)
 
-dr <- mortality %>%
-  group_by(Year) %>%
-  summarise(DeaR = sum(DeaR * Pop) / sum(Pop))
-dr <- dr$DeaR
+mor <- mortality %>% 
+  left_join(tibble(Year = 2016, HIV = c("HIV", "NonHIV"))) %>%
+  mutate(DeaR = ifelse(HIV == "HIV", DeaR + 21/1300, DeaR)) %>%
+  group_by(Year, HIV) %>%
+  summarise(DeaR = weighted.mean(DeaR, Noti)) %>%
+  arrange(Year, HIV)
+
+exo <- get_exo_anp_hiv(mor, untr_a = "no_untr", untr_s = "full", untr_hiv = "as_nonhiv", bg_death = T, pr_fp = 0)
 
 
 yrs <- sort(unique(noti$Year))
@@ -233,9 +234,6 @@ dat <- list(
   n_t = n_t,
   n_gp = nrow(prv)
 )
-
-
-exo <- get_exo(prv$HIV, rep(dr, nrow(prv)), untr = "full", bg_death = T)
 
 
 model <- readRDS(file = "stan/m1_duration_free.rds")
@@ -269,8 +267,13 @@ prv <- prevalence %>%
 noti <- notification %>%
   arrange(Year, Sex, Agp, HIV)
 
-dr <- mortality %>% arrange(Sex, Agp)
-dr <- rep(dr$DeaR, each = 2)
+mor <- mortality %>% 
+  left_join(tibble(Year = 2016, HIV = c("HIV", "NonHIV"))) %>%
+  mutate(DeaR = ifelse(HIV == "HIV", DeaR + 21/1300, DeaR)) %>%
+  arrange(Year, Sex, Agp, HIV)
+
+#exo <- get_exo_anp(mor, untr_a = "no_untr", untr_s = "full", bg_death = T, pr_fp = 0)
+exo <- get_exo_anp_hiv(mor, untr_a = "no_untr", untr_s = "full", untr_hiv = "as_nonhiv", bg_death = T, pr_fp = 0)
 
 
 yrs <- sort(unique(noti$Year))
@@ -297,10 +300,8 @@ dat <- list(
 )
 
 
-exo <- get_exo(prv$HIV, dr, untr = "full", bg_death = T)
-
 model <- readRDS(file = "stan/m2_cov.rds")
-fitted_full <- sampling(model, data = c(dat, exo), iter = 5000, warmup = 4000, chain = 2)
+fitted_full <- sampling(model, data = c(dat, exo), iter = 3000, warmup = 2000, chain = 3)
 
 summary(fitted_full, pars = c("r_sym", "r_det_sn", "r_det_sp"))$summary
 summary(fitted_full, pars = c("lrr_cs_sn", "lrr_cs_sp", "lrr_sym"))$summary

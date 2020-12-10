@@ -30,7 +30,7 @@ Durations <- list(
   Durations_All = bind_rows(lapply(Durations_list, function(x) x$Durations_All))
 )
 
-save(Durations, file = "out/Durations_all.rdata")
+save(Durations, file = "out/Durations_All.rdata")
 
 
 
@@ -59,7 +59,7 @@ Conversion <- list(
   Wts = bind_rows(lapply(Conversion_list, function(x) x$Wts)) %>% mutate(ISO = names(countries))
 )
 
-save(Conversion, file = "out/Conversion_all.rdata")
+save(Conversion, file = "out/Conversion_All.rdata")
 
 
 ### Collect cascade ----
@@ -71,10 +71,18 @@ Cascade_list <- lapply(names(countries), function(iso) {
 names(Cascade_list) <- names(countries)
 
 
+Cohort_list <- lapply(names(countries), function(iso) {
+  country <- countries[names(countries) == iso]
+  infer_cohort(iso, country, 200)
+})
+names(Cohort_list) <- names(countries)
+
+
 for (iso in names(countries)) {
   iso <- glue::as_glue(iso)
   Cascade <- Cascade_list[[iso]]
-  save(Cascade, file = "out/Durations_" + iso + ".rdata")
+  Cohort <- Cohort_list[[iso]]
+  save(Cascade, Cohort, file = "out/Cascade_" + iso + ".rdata")
 }
 
 
@@ -84,6 +92,11 @@ Cascade <- list(
   Cascade_All = bind_rows(lapply(Cascade_list, function(x) x$Cascade_All))
 )
 
-save(Cascade, file = "out/Cascade_All.rdata")
+Cohort <- list(
+  Cohort = bind_rows(lapply(Cohort_list, function(x) x$Cohort)),
+  End = bind_rows(lapply(Cohort_list, function(x) x$End))
+)
+
+save(Cascade, Cohort, file = "out/Cascade_All.rdata")
 
 
