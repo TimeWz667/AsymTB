@@ -24,7 +24,6 @@ for (iso in names(countries)) {
 }
 
 
-
 Durations <- list(
   Durations_Sex = bind_rows(lapply(Durations_list, function(x) x$Durations_Sex)),
   Durations_All = bind_rows(lapply(Durations_list, function(x) x$Durations_All))

@@ -21,35 +21,38 @@ load("out/summary_data.rdata")
 load("out/Durations_All.rdata")
 
 
-Tab_Dur <- 
-  Durations$Durations_All %>%
+Tab_Dur <- Durations$Durations_All %>%
   group_by(Country, ISO) %>%
   select(-CNR) %>%
   left_join(Tab_dat %>% select(Country, CNR = CNR_M)) %>%
-  summarise(Prv_All = frm_mci(PrvN_All / Pop * 1E5, 0),
+  summarise(#Prv_All = frm_mci(PrvN_All / Pop * 1E5, 0),
             PN_All = frm_mci(PrvN_All / Pop / CNR * 12, 1),
-            Delay_All = frm_mci(DelayA * 12, 1),
+            Delay_All = frm_mci(Delay_All * 12, 1),
             CDR_All = frm_pci(CDR_A),
             Inc_All = frm_mci(IncR_All * 1E5, 0),
-            Prv_Sym = frm_mci((PrvN_All - PrvN_A) / Pop * 1E5, 0),
+            #Prv_Sym = frm_mci((PrvN_All - PrvN_A) / Pop * 1E5, 0),
             PN_Sym = frm_mci((PrvN_All - PrvN_A) / Pop / CNR * 12, 1),
-            Delay_Sym = frm_mci(DelayS * 12, 1),
+            Delay_SymCs = frm_mci(DurS * 12, 1),
+            Delay_Sym = frm_mci(Delay_S * 12, 1),
             CDR_Sym = frm_pci(CDR_S),
             Inc_Sym = frm_mci(IncR_S * 1E5, 0),
             ADR = frm_pci(ADR, 0.1),
             PropDurA = frm_pci(DurA / TTN),
-            PropDurSymS = frm_pci(DurS / (DurS + DurC))
+            PropDurSymS = frm_pci(DurS / (DurS + DurC)),
+            PrSC = frm_pci(PrSC),
+            PrMor = frm_pci(PrMor)
   ) %>%
   left_join(Tab_dat %>% mutate(
     PopSize = sprintf("%.1f", Pop * 1E-6),
     YearSurvey = YearSurvey,
     PrvP_Survey = sprintf("%.0f (%.0f \u2013 %.0f)", round(PrvP_M * 1E5), round(PrvP_L * 1E5), round(PrvP_U * 1E5)),
     Noti_WHO = sprintf("%.0f (%.0f \u2013 %.0f)", round(CNR_M * 1E5), round(CNR_L * 1E5), round(CNR_U * 1E5)),
-    CDR_WHO = sprintf("%.1f (%.1f \u2013 %.1f)", CDR_M / 100, CDR_L / 100, CDR_U / 100),
+    CDR_WHO = sprintf("%.0f (%.1f \u2013 %.0f)", CDR_M, CDR_L, CDR_U),
     Inc_WHO = sprintf("%.0f (%.0f \u2013 %.0f)", round(IncR_M * 1E5), round(IncR_L * 1E5), round(IncR_U * 1E5))
   ) %>%
     select(Country, PopSize, YearSurvey, PrvP_Survey, Noti_WHO, CDR_WHO, Inc_WHO)) %>%
-  mutate(Country = countries_lab[Country]) %>%
+  mutate(Country = countries_lab[Country],
+         Delay_SymCs = ifelse(Delay_SymCs == Delay_Sym, "N.A.", Delay_SymCs)) %>%
   relocate(PopSize, YearSurvey, PrvP_Survey, Noti_WHO, CDR_WHO, Inc_WHO ,.after = ISO)
   
   

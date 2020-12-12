@@ -65,7 +65,7 @@ for (i in 1:length(countries)) {
     
     tab.tex <- knitr::kable(tab, "latex", digits = c(NA, NA, 2, 2, NA, 0, 3), 
                             booktabs = T, align = "llccccc", 
-                            linesep = c(rep("", 4), "\\addlinespace"),
+                            linesep = c(rep("", 3), "\\addlinespace"),
                             caption = "Posterior distributions of parameters, Model B")
   } else {
     tab1 <- summary(fitted_as_uni, pars = c("r_sym", "r_det", "adr"))$summary
@@ -94,7 +94,7 @@ for (i in 1:length(countries)) {
     
     tab.tex <- knitr::kable(tab, "latex", digits = c(NA, NA, 2, 2, NA, 0, 3), 
                             booktabs = T, align = "llccccc", 
-                            linesep = c(rep("", 3), "\\addlinespace"),
+                            linesep = c(rep("", 2), "\\addlinespace"),
                             caption = "Posterior distributions of parameters, Model A")
   }
   tab.tex <- gsub("Rhat", "\\\\^\\{R\\}", tab.tex)

@@ -37,7 +37,7 @@ dat <- list(
   Sn = round(sum(prv$SymSn)),
   Sp = round(sum(prv$SymSp)),
   Years = yrs,
-  Pop = noti$Pop,
+  Pop = round(noti$Pop),
   NotiSn = noti$n_sn,
   NotiSp = noti$n_sp,
   n_t = n_t
