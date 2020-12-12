@@ -27,6 +27,6 @@ countries_cs <- c(
 countries_lab <- c(
   "Cambodia", "Ethiopia", "Kenya", "Lao PDR", 
   "Malawi", "Pakistan", "Philippines", 
-  "Tanzania", "Uganda" , "Viet Nam", "Zambia"
+  "Tanzania", "Uganda" , "Vietnam", "Zambia"
 )
 names(countries_lab) <- countries
