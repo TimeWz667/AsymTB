@@ -2,10 +2,9 @@ source("data/country_list.R")
 
 
 
-i <- 1
-iso <- glue::as_glue(names(countries)[i])
-country <- countries[i]
-
+#i <- 1
+#iso <- glue::as_glue(names(countries)[i])
+#country <- countries[i]
 
 
 infer_duration <- function(iso, country) {
@@ -15,7 +14,7 @@ infer_duration <- function(iso, country) {
   ### Load data --
   load("data/Input_" + iso + ".rdata")
   load(paste0("out/ASC/Post_", iso, ".rdata"))
-  load(paste0("out/ANP/Post_", iso, ".rdata"))
+  load(paste0("out/ASC/Post_Sp_", iso, ".rdata"))
 
   pop <- notification %>%
     filter(Year == 2019) %>%
@@ -26,122 +25,130 @@ infer_duration <- function(iso, country) {
   
   ### Duration ----
   if (country %in% countries_cs) {
-    inc <- extract(fitted_asc_uni, pars = c("IncN_A"))$IncN_A
-    n_iter <- dim(inc)[1]
-    
-    inc <- tibble(Key = rep(1:n_iter, 2), 
-                  Sex = rep(c("Female", "Male"), each = n_iter), 
-                  Wts = c(inc / rowSums(inc)))
-
-    pars <- c("dur_a", "dur_s", "dur_c", "adr", "NotiN", "CDR_A", "CDR_S",
-              "IncN_A", "IncN_S", "IncN_C", "PrvN_A", "PrvN_S", "PrvN_C")
+    pars <- c("dur_a", "dur_s", "dur_c", "ra", "rs", "rc", "adr", "NotiN", "CDR_A", "CDR_S",
+              "IncN_A", "IncN_S", "IncN_C", "PrvN_A", "PrvN_S", "PrvN_C", 
+              "ra", "rs", "rc", "Gap_A", "Gap_S", "Gap_C")
     
     pars <- apply(expand.grid(pars, c("[1]", "[2]")), 1, function(x) paste0(x, collapse = ""))
     
-    durations <- as_tibble(extract(fitted_asc_uni, pars = pars)) %>%
-      mutate(Key = 1:n_iter) %>%
+    r_sc <- extract(fitted_asc_uni, pars = c("r_sc"))$r_sc
+    n_iter <- length(r_sc)
+    dur <- as_tibble(extract(fitted_asc_uni, pars = pars)) %>%
+      mutate(Key = 1:n_iter, `r_sc[1]` = r_sc, `r_sc[2]` = r_sc) %>%
       pivot_longer(-Key) %>%
       tidyr::extract(name, c("Index", "Sex"), "(\\w+)\\[(\\d)\\]") %>%
       mutate(Sex = ifelse(Sex == 1, "Female", "Male")) %>%
       pivot_wider(names_from = Index, values_from = value) %>%
       rename(DurA = dur_a, DurS = dur_s, DurC = dur_c) %>%
       mutate(TTS = DurA, TTC = DurA + DurS, TTN = DurA + DurS + DurC,
-             PrvN_All = PrvN_A + PrvN_S + PrvN_C)
+             Delay_All = TTN, Delay_S = TTN - TTS,
+             PrvN_All = PrvN_A + PrvN_S + PrvN_C,
+             PrSC_A = DurA * r_sc, PrSC_S = Gap_A * DurS * r_sc, 
+             PrSC_C = Gap_A * Gap_S * DurC * r_sc, PrSC = PrSC_A + PrSC_S + PrSC_C,
+             PrMor_A = DurA * (ra - r_sc), PrMor_S = Gap_A * DurS * (rs - r_sc),
+             PrMor_C = Gap_A * Gap_S * DurC * (rc - r_sc), PrMor = PrMor_A + PrMor_S + PrMor_C
+             ) %>%
+      select(-c(ra, rs, rc, r_sc, Gap_A, Gap_S, Gap_C))
   } else {
-    inc <- extract(fitted_as_uni, pars = c("IncN_A"))$IncN_A
-    n_iter <- dim(inc)[1]
-    
-    inc <- tibble(Key = rep(1:n_iter, 2), 
-                  Sex = rep(c("Female", "Male"), each = n_iter), 
-                  Wts = c(inc / rowSums(inc)))
-    
     pars <- c("dur_a", "dur_s", "adr", "NotiN", "CDR_A", "CDR_S", 
-              "IncN_A", "IncN_S", "PrvN_A", "PrvN_S")
+              "IncN_A", "IncN_S", "PrvN_A", "PrvN_S",
+              "ra", "rs", "Gap_A", "Gap_S")
     
     pars <- apply(expand.grid(pars, c("[1]", "[2]")), 1, function(x) paste0(x, collapse = ""))
     
-    durations <- as_tibble(extract(fitted_as_uni, pars = pars)) %>%
-      mutate(Key = 1:n_iter) %>%
+    r_sc <- extract(fitted_as_uni, pars = c("r_sc"))$r_sc
+    n_iter <- length(r_sc)
+    dur <- as_tibble(extract(fitted_as_uni, pars = pars)) %>%
+      mutate(Key = 1:n_iter, `r_sc[1]` = r_sc, `r_sc[2]` = r_sc) %>%
       pivot_longer(-Key) %>%
       tidyr::extract(name, c("Index", "Sex"), "(\\w+)\\[(\\d)\\]") %>%
       mutate(Sex = ifelse(Sex == 1, "Female", "Male")) %>%
       pivot_wider(names_from = Index, values_from = value) %>%
       rename(DurA = dur_a, DurS = dur_s) %>%
       mutate(DurC = 0, TTS = DurA, TTC = 0,  TTN = DurA + DurS, 
+             Delay_All = TTN, Delay_S = TTN - TTS,
              IncN_C = 0, PrvN_C = 0,
-             PrvN_All = PrvN_A + PrvN_S)
+             PrvN_All = PrvN_A + PrvN_S,
+             PrSC_A = DurA * r_sc, PrSC_S = Gap_A * DurS * r_sc, 
+             PrSC_C = 0, PrSC = PrSC_A + PrSC_S + PrSC_C,
+             PrMor_A = DurA * (ra - r_sc), PrMor_S = Gap_A * DurS * (rs - r_sc),
+             PrMor_C = 0, PrMor = PrMor_A + PrMor_S + PrMor_C) %>%
+      select(-c(ra, rs, r_sc, Gap_A, Gap_S))
   }
   
-  durations <- durations %>%
+  dur <- dur %>%
     left_join(pop) %>%
-    left_join(inc) %>%
     mutate(Country = country, ISO = iso, 
-           DelayA = TTN, DelayS = TTN - TTS,
+           Delay_All = TTN, Delay_S = TTN - TTS,
+           CNR = NotiN / Pop,
+           PN_All = PrvN_All / NotiN, PN_S = (PrvN_S + PrvN_C) / NotiN,
+           IncR_All = IncN_A / Pop, IncR_S = IncN_S / Pop,
+           IncR_Allg = CNR / CDR_A, IncR_Sg = CNR / CDR_S,
+           Prv_All = PrvN_All / Pop) %>%
+    rename(ADR = adr)
+  
+  
+  dur_all <- dur %>%
+    group_by(Country, ISO, Key) %>%
+    summarise(DurA = weighted.mean(DurA , IncN_A), 
+              DurS = weighted.mean(DurS, IncN_S), 
+              DurC = weighted.mean(DurC, IncN_C),
+              ADR = weighted.mean(ADR, IncN_A),
+              TTS = weighted.mean(TTS, IncN_A), 
+              TTC = weighted.mean(TTC, IncN_A), 
+              TTN = weighted.mean(TTN, IncN_A),
+              PrMor = weighted.mean(PrMor, IncN_A), 
+              PrSC = weighted.mean(PrSC, IncN_A),
+              CDR_A = weighted.mean(CDR_A, IncN_A),
+              CDR_S = weighted.mean(CDR_S, IncN_S),
+              NotiN = sum(NotiN), 
+              IncN_A = sum(IncN_A), IncN_S = sum(IncN_S), IncN_C = sum(IncN_C),
+              PrvN_A = sum(PrvN_A), PrvN_S = sum(PrvN_S), PrvN_C = sum(PrvN_C), PrvN_All = sum(PrvN_All),
+              Pop = sum(Pop)) %>%
+    mutate(Delay_All = TTN, Delay_S = TTN - TTS,
            CNR = NotiN / Pop,
            PN_All = PrvN_All / NotiN, PN_S = (PrvN_S + PrvN_C) / NotiN,
            IncR_All = IncN_A / Pop, IncR_S = IncN_S / Pop,
            IncR_Allg = CNR / CDR_A, IncR_Sg = CNR / CDR_S,
            Prv_All = PrvN_All / Pop)
   
-  
   ### Focus on smear-positive -----
-  
-  inc <- extract(fitted_anp_uni, pars = c("IncN_A"))$IncN_A
-  n_iter <- dim(inc)[1]
-  
-  inc <- tibble(Key = rep(1:n_iter, 2), 
-                Sex = rep(c("Female", "Male"), each = n_iter), 
-                Wts = c(inc / rowSums(inc)))
-  
-  
-  pars <- c("dur_sp", "adr", "NotiN_Sp", "CDR_Sp", 
-            "PrvN_A", "PrvN_Sp")
+  pars <- c("dur_a", "dur_s", "NotiN", "CDR_A", "CDR_S", 
+            "IncN_A", "IncN_S", "PrvN_A", "PrvN_S")
   
   pars <- apply(expand.grid(pars, c("[1]", "[2]")), 1, function(x) paste0(x, collapse = ""))
-  
-  dur_sp <- as_tibble(extract(fitted_anp_uni, pars = pars)) %>%
+  r_sc <- extract(fitted_as_uni, pars = c("r_sc"))$r_sc
+  n_iter <- length(r_sc)
+  dur_sp <- as_tibble(extract(fitted_sp, pars = pars)) %>%
     mutate(Key = 1:n_iter) %>%
     pivot_longer(-Key) %>%
     tidyr::extract(name, c("Index", "Sex"), "(\\w+)\\[(\\d)\\]") %>%
     mutate(Sex = ifelse(Sex == 1, "Female", "Male")) %>%
     pivot_wider(names_from = Index, values_from = value) %>%
-    rename(DurSp = dur_sp) %>%
-    mutate(PrvN_SymSp = PrvN_A + PrvN_Sp) %>%
     left_join(pop) %>%
-    left_join(inc) %>%
-    mutate(Country = country, ISO = iso, 
-           DelaySp = DurSp, 
+    rename(Dur_ASp = dur_a, Dur_SymSp = dur_s, PrvN_ASp = PrvN_A, PrvN_SymSp = PrvN_S,
+           NotiN_Sp = NotiN, CDR_ASp = CDR_A, CDR_SymSp = CDR_S,
+           IncN_ASp = IncN_A, IncN_SymSp = IncN_S) %>%
+    mutate(Delay_Sp = Dur_ASp + Dur_SymSp, Delay_SymSp = Dur_SymSp,
+           PrvN_Sp = PrvN_ASp + PrvN_SymSp,
            CNR_Sp = NotiN_Sp / Pop,
-           Prv_SymSp = PrvN_SymSp / Pop,
-           Prv_Sp = PrvN_Sp / Pop,
-           PN_SymSp = PrvN_SymSp / NotiN_Sp, PN_Sp = PrvN_Sp / NotiN_Sp)
+           PN_Sp = PrvN_Sp / NotiN_Sp, PN_SymSp = PrvN_SymSp / NotiN_Sp)
 
-  
   dur_sp_all <- dur_sp %>%
     group_by(Key) %>%
-    summarise(DelaySp = sum(DelaySp * Wts), 
-              Prv_Sp = sum(Prv_Sp * Wts), Prv_SymSp = sum(Prv_SymSp * Wts), 
-              Noti_Sp = sum(NotiN_Sp * Wts), CNR_Sp = sum(CNR_Sp * Wts),
-              PN_SymSp = sum(PN_SymSp * Wts), PN_Sp = sum(PN_Sp * Wts))
+    summarise(Pop = sum(Pop),
+              Delay_Sp = weighted.mean(Delay_Sp, IncN_ASp), 
+              Delay_SymSp = weighted.mean(Delay_SymSp, IncN_SymSp), 
+              PrvN_Sp = sum(PrvN_Sp), PrvN_SymSp = sum(PrvN_SymSp), 
+              NotiN_Sp = sum(NotiN_Sp), CNR_Sp = sum(NotiN_Sp) / Pop) %>%
+    mutate(PN_Sp = PrvN_Sp / NotiN_Sp, PN_SymSp = PrvN_SymSp / NotiN_Sp)
   
   ### Collect results -----
   res <- list()
   
-  res$Durations_Sex <- durations %>% left_join(dur_sp)
+  res$Durations_Sex <- dur %>% left_join(dur_sp)
   
-  res$Durations_All <- durations %>% 
-    group_by(Country, ISO, Key) %>%
-    left_join(dur_sp_all) %>%
-    summarise(DurA = sum(DurA * Wts), DurS = sum(DurS * Wts), DurC = sum(DurC * Wts),
-              ADR = sum(adr * Wts),
-              NotiN = sum(NotiN), IncN_A = sum(IncN_A), IncN_S = sum(IncN_S), IncN_C = sum(IncN_C),
-              PrvN_A = sum(PrvN_A), PrvN_S = sum(PrvN_S), PrvN_C = sum(PrvN_C), PrvN_All = sum(PrvN_All),
-              Pop = sum(Pop),
-              TTS = sum(TTS * Wts), TTC = sum(TTC * Wts), TTN = sum(TTN * Wts),
-              DelayA = sum(DelayA * Wts), DelayS = sum(DelayS * Wts)) %>%
-    mutate(CDR_A = NotiN / IncN_A, CDR_S = NotiN / IncN_S, 
-           PN_All = PrvN_All / NotiN, PN_S = (PrvN_S + PrvN_C) / NotiN,
-           CNR = NotiN / Pop, IncR_All = IncN_A / Pop, IncR_S = IncN_S / Pop)
+  res$Durations_All <- dur_all %>% left_join(dur_sp_all)
     
   res
 }
@@ -204,6 +211,7 @@ infer_cascade <- function(iso, country) {
     pars <- c("Gap_A", "Gap_S", "Gap_C")
     pars <- apply(expand.grid(pars, c("[1]", "[2]")), 1, function(x) paste0(x, collapse = ""))
     
+    
     Cascade_Sex <- as_tibble(extract(fitted_asc_uni, pars = pars)) %>%
       mutate(Key = 1:n_iter) %>%
       pivot_longer(-Key) %>%
@@ -214,7 +222,7 @@ infer_cascade <- function(iso, country) {
       rename(G_sym = Gap_A, G_aware = Gap_S, G_care = Gap_C, G_complete = Gap_T) %>%
       mutate(C_inc = 1, G_inc = 1, 
              C_sym = G_sym, C_aware = G_aware * C_sym, 
-             C_care = G_care * C_aware, C_complete = G_complete * C_care) %>%
+             C_care = G_care * C_aware, C_complete = G_complete * C_care,) %>%
       left_join(wts)
   } else {
     wts <- extract(fitted_as_uni, pars = c("IncN_A"))$IncN_A
