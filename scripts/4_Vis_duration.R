@@ -12,6 +12,7 @@ ext <- glue::as_glue(".png")
 ### Country list -----
 source("data/country_list.R")
 load("out/Durations_all.rdata")
+load("data/Input_Cov.rdata")
 
 ### Main ----
 for (i in 1:length(countries)) {
@@ -141,13 +142,61 @@ gs$g_Asym_Sex <- Durations$Durations_Sex %>%
 gs$g_Dur_Dur <- Durations$Durations_All %>%
   select(Country, ISO, Key, DurA, DurS, DurC) %>%
   filter(Key < 200) %>%
-  mutate(DA = DurA, DT = DurS + DurC,Country = countries_lab[Country]) %>%
+  mutate(DA = DurA, DT = DurS + DurC, Country = countries_lab[Country]) %>%
   ggplot(aes(x = DA * 12, y = DT * 12)) +
   geom_point(aes(colour = Country), alpha = 0.2) +
   scale_y_continuous("Symptomat onset to notification, month", breaks = c(0, 4, 8, 12, 16, 24, 36)) +
   scale_x_continuous("TB-detectable to symptom onset, month", breaks = c(0, 4, 8, 12, 16, 24, 36)) +
   facet_wrap(.~Country) +
   theme(legend.position = "none")
+
+
+covs_binded <- Durations$Durations_All %>%
+  group_by(Country, ISO) %>%
+  summarise(AM = mean(DurA * 12), AL = quantile(DurA * 12, 0.025), AU = quantile(DurA * 12, 0.975)) %>%
+  left_join(covariate %>% filter(Sex == "Total")) %>%
+  mutate(Country = countries_lab[Country])
+
+
+
+
+gs$g_Dur_HIV <- covs_binded %>%
+  ggplot(aes(y = PrvHIV)) +
+  geom_pointrange(aes(x = AM, xmin = AL, xmax = AU)) +
+  geom_text(aes(x = AU, label = ISO), hjust = -0.1, size = rel(3)) +
+  scale_y_continuous("People living with HIV, %", labels = scales::percent) +
+  scale_x_continuous("TB-detectable to symptom onset, month", breaks = c(0, 4, 8, 12, 16, 24, 36), limits = c(0, 22)) +
+  expand_limits(y = 0)
+
+
+gs$g_Dur_ART <- covs_binded %>%
+  ggplot(aes(y = CovART)) +
+  geom_pointrange(aes(x = AM, xmin = AL, xmax = AU)) +
+  geom_text(aes(x = AU, label = ISO), hjust = -0.1, size = rel(3)) +
+  scale_y_continuous("ART coverage, %", labels = scales::percent) +
+  scale_x_continuous("TB-detectable to symptom onset, month", breaks = c(0, 4, 8, 12, 16, 24, 36), limits = c(0, 22)) +
+  expand_limits(y = 0)
+
+
+gs$g_Dur_HIVTB <- covs_binded %>%
+  ggplot(aes(y = PrvHIVTB)) +
+  geom_pointrange(aes(x = AM, xmin = AL, xmax = AU)) +
+  geom_text(aes(x = AU, label = ISO), hjust = -0.1, size = rel(3)) +
+  scale_y_continuous("People living with HIV among TB notification, %", labels = scales::percent) +
+  scale_x_continuous("TB-detectable to symptom onset, month", breaks = c(0, 4, 8, 12, 16, 24, 36), limits = c(0, 22)) +
+  expand_limits(y = 0)
+
+
+covs_binded %>%
+  ggplot(aes(y = PrvHIVTB)) +
+  geom_pointrange(aes(x = AM, xmin = AL, xmax = AU, colour = Country)) +
+  scale_y_continuous("ART coverage, %", labels = scales::percent) +
+  scale_x_continuous("Budget", breaks = c(0, 4, 8, 12, 16, 24, 36)) +
+  expand_limits(y = 0)
+
+
+
+
 
 
 save(gs, file = "out/g_TTE_All.rdata")
@@ -159,4 +208,7 @@ ggsave(plot = gs$g_Dist_Sex, paste0("docs/figs/duration/TTE_Sex_All", ext), widt
 ggsave(plot = gs$g_Asym, paste0("docs/figs/duration/Asym_All", ext), width = 5.5, height = 4.5)
 ggsave(plot = gs$g_Asym_Sex, paste0("docs/figs/duration/Asym_Sex_All", ext), width = 7.5, height = 4.5)
 ggsave(plot = gs$g_Dur_Dur, paste0("docs/figs/duration/DurationDuration", ext), width = 6.5, height = 6.5)
+ggsave(plot = gs$g_Dur_HIV, paste0("docs/figs/duration/DurationHIV", ext), width = 6.5, height = 6.5)
+ggsave(plot = gs$g_Dur_ART, paste0("docs/figs/duration/DurationART", ext), width = 6.5, height = 6.5)
+ggsave(plot = gs$g_Dur_HIVTB, paste0("docs/figs/duration/DurationHIVTB", ext), width = 6.5, height = 6.5)
 

@@ -41,7 +41,9 @@ g_PN <- Durations$Durations_All %>%
 g_PN
 
 
-ggsave(plot = g_PN, "docs/figs/duration/PN" + ext, width = 9.5, height = 7.5)
+ggsave(plot = g_PN, "docs/figs/duration/PN_All" + ext, width = 9.5, height = 7.5)
+
+
 
 
 ## Incidence
